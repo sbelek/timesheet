@@ -252,14 +252,13 @@ const dist=(a,b)=>{const R=6371e3,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.l
 let lastLoc=null;
 let nearSite=null;
 async function locate(quiet){
-  if(!quiet)$('#addr').textContent='Определяю место…';
   try{
     const p=await getPos();const addr=await geocode(p.lat,p.lon);
     lastLoc={...p,addr:addr||`${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`};
     const near=D.sites.filter(s=>s.lat!=null).map(s=>({s,d:dist(p,s)})).sort((a,b)=>a.d-b.d)[0];
     nearSite=near&&near.d<200?near.s:null;
     if(nearSite&&!D.cur){$('#site').value=nearSite.id;showSiteMap()}
-    $('#addr').textContent='📍 Вы здесь: '+lastLoc.addr+(nearSite?` — рядом с «${nearSite.name}»`:'');
+    $('#addr').textContent='';
     showNear();
     if(D.cur&&!D.cur.lat){D.cur.address=D.cur.address||lastLoc.addr;D.cur.lat=p.lat;D.cur.lon=p.lon;save()}
     return lastLoc;
@@ -306,7 +305,7 @@ function renderSites(){
   const cur=$('#site').value;
   $('#site').innerHTML='<option value="">— Без объекта —</option>'+D.sites.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   $('#site').value=D.cur?D.cur.siteId||'':cur;showSiteMap();
-  $('#siteList').innerHTML=D.sites.length?D.sites.map(s=>`<div class="item"><div><b>${esc(s.name)}</b><small>${esc(s.addr||'без адреса')}</small>${mapLink(siteQuery(s))}<button class="pin" data-pin="${esc(s.id)}" type="button">${s.lat!=null?'✓ координаты есть':'📍 Привязать к этому месту'}</button></div><button class="sec sm" data-del="${esc(s.id)}" type="button">Удалить</button></div>`).join(''):'<div class="empty">Объектов пока нет</div>';
+  $('#siteList').innerHTML=D.sites.length?D.sites.map(s=>`<div class="item"><div data-site="${esc(s.id)}"><b>${esc(s.name)}</b><small>${esc(s.addr||'без адреса')}</small>${mapLink(siteQuery(s))}${s.lat==null?`<button class="pin" data-pin="${esc(s.id)}" type="button">📍 Привязать к этому месту</button>`:''}</div><button class="sec sm" data-del="${esc(s.id)}" type="button">Удалить</button></div>`).join(''):'<div class="empty">Объектов пока нет</div>';
 }
 function renderShift(){
   const c=D.cur,ctr=$('#ctrls');
@@ -400,9 +399,10 @@ $('#logList').addEventListener('click',e=>{const it=e.target.closest('[data-ed]'
 
 /* --- объекты --- */
 let sPos=null;
+$('#sAddr').addEventListener('input',()=>{if(sPos){sPos=null;$('#sCoords').textContent='Адрес изменён — координаты возьму по адресу'}});
 $('#sLoc').onclick=async()=>{$('#sCoords').textContent='Определяю…';try{const p=await getPos();sPos=p;const a=await geocode(p.lat,p.lon);$('#sAddr').value=a;$('#sCoords').textContent=`Координаты сохранены (точность ~${Math.round(p.acc)} м)`}catch(e){$('#sCoords').textContent='Геолокация недоступна — впишите адрес вручную'}};
 $('#sAdd').onclick=async()=>{const n=$('#sName').value.trim();if(!n)return toast('Введите название');const ad=$('#sAddr').value.trim();let pos=sPos;if(!pos&&ad){$('#sCoords').textContent='Ищу адрес на карте…';pos=await fwdGeocode(ad)}D.sites.push({id:uid(),name:n,addr:ad,lat:pos?.lat,lon:pos?.lon});if(!pos)setTimeout(()=>toast('Координаты не найдены — нажмите «Привязать к этому месту»'),2300);logEv('Новый объект: '+n);sPos=null;$('#sName').value=$('#sAddr').value='';$('#sCoords').textContent='';save();renderSites();toast('Объект добавлен')};
-$('#siteList').addEventListener('click',async e=>{const pn=e.target.closest('[data-pin]');if(pn){const s=D.sites.find(x=>x.id===pn.dataset.pin);if(s&&s.lat!=null&&!pn.dataset.sure){pn.dataset.sure=1;pn.textContent='Перепривязать к текущему месту?';return}pn.textContent='Определяю…';try{const p=await getPos();s.lat=p.lat;s.lon=p.lon;if(!s.addr)s.addr=await geocode(p.lat,p.lon);save();renderSites();toast('Объект привязан к этому месту')}catch(err){toast('Не удалось определить место');renderSites()}return}const id=e.target.dataset.del;if(id)confirmBox('Удалить объект?',siteName(id),()=>{D.sites=D.sites.filter(s=>s.id!==id);save();renderSites()})});
+$('#siteList').addEventListener('click',async e=>{const pn=e.target.closest('[data-pin]');if(pn){const s=D.sites.find(x=>x.id===pn.dataset.pin);if(!s)return;pn.textContent='Определяю…';try{const p=await getPos();s.lat=p.lat;s.lon=p.lon;if(!s.addr)s.addr=await geocode(p.lat,p.lon);save();renderSites();toast('Объект привязан к этому месту')}catch(err){toast('Не удалось определить место');renderSites()}return}const id=e.target.dataset.del;if(id)confirmBox('Удалить объект?',siteName(id),()=>{D.sites=D.sites.filter(s=>s.id!==id);save();renderSites()})});
 
 /* --- отчёт --- */
 const monday=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
@@ -482,7 +482,7 @@ try{navigator.storage?.persist?.()}catch(e){}
 (async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}locate(true);startGeoWatch()})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){locate(true);startGeoWatch()}});
-window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,loadGoogle,getPos,toast,esc,setPending:p=>{sPos=p}};
+window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,loadGoogle,getPos,dist,toast,esc,setPending:p=>{sPos=p}};
 }
 </script>
 <script src="map.js"></script>

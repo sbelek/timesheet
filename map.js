@@ -124,12 +124,22 @@
       } catch (e) { SM.toast('Не удалось определить место'); }
     };
 
-    if (picked) {
+    const q = s ? (s.addr || '').trim() : ($('#sAddr')?.value.trim() || '');
+    // Адрес главнее: если сохранённая точка далеко от адреса (например, привязана «Я здесь»), ставим метку по адресу
+    if (picked && q) {
+      const a = await SM.fwdGeocode(q);
+      if (!map) return;
+      const far = a && SM.dist(a, picked) > 300;
+      const p = far ? a : picked;
+      map.setCenter({ lat: p.lat, lng: p.lon });
+      map.setZoom(18);
+      setPoint(g, p.lat, p.lon, false);
+      if (far) $('#mHint').textContent = `Метка поставлена по адресу (старая точка была в ${Math.round(SM.dist(a, s))} м). Поправьте, если нужно, и нажмите «Готово».`;
+    } else if (picked) {
       map.setCenter({ lat: picked.lat, lng: picked.lon });
       map.setZoom(18);
       setPoint(g, picked.lat, picked.lon, false);
     } else {
-      const q = s ? (s.addr || '') : ($('#sAddr')?.value.trim() || '');
       if (q) {
         const p = await SM.fwdGeocode(q);
         if (p && map) { map.setCenter({ lat: p.lat, lng: p.lon }); map.setZoom(18); }
@@ -157,11 +167,11 @@
   const hint = document.querySelector('#t-sites > p.addr');
   if (hint) hint.textContent = 'Когда вы ближе 200 м к объекту с координатами, приложение предложит начать смену.';
 
-  const decorate = () => document.querySelectorAll('#siteList [data-pin]').forEach(b => {
-    if (b.nextElementSibling?.classList.contains('edit-s')) return;
+  const decorate = () => document.querySelectorAll('#siteList [data-site]').forEach(d => {
+    if (d.querySelector('.edit-s')) return;
     const e = document.createElement('button');
-    e.type = 'button'; e.className = 'edit-s'; e.dataset.edit = b.dataset.pin; e.textContent = '✏️ Изменить / на карте';
-    b.after(e);
+    e.type = 'button'; e.className = 'edit-s'; e.dataset.edit = d.dataset.site; e.textContent = '✏️ Изменить / на карте';
+    d.appendChild(e);
   });
   new MutationObserver(decorate).observe($('#siteList'), { childList: true, subtree: true });
   decorate();
