@@ -439,7 +439,9 @@ try{navigator.storage?.persist?.()}catch(e){}
 (async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}if(!D.cur&&D.sites.some(s=>s.lat!=null))locate(true)})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!D.cur&&D.sites.some(s=>s.lat!=null))locate(true)});
+window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,getPos,toast,esc,setPending:p=>{sPos=p}};
 }
 </script>
+<script src="map.js"></script>
 </body>
 </html>
