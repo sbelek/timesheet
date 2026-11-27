@@ -101,7 +101,7 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
     <div id="clock" class="big">0:00:00</div>
     <div id="state" class="state">Смена не начата</div>
   </div>
-  <div id="nearCard" class="card near" hidden><div id="nearTxt"></div><button id="nearGo" type="button" style="width:100%;margin-top:10px">▶ Начать смену здесь</button></div>
+  <div id="nearCard" class="card near" hidden><div id="nearTxt"></div><div id="nearBtns" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"></div></div>
   <div class="card">
     <label for="site">Объект</label>
     <select id="site"></select>
@@ -244,7 +244,7 @@ function openPhoto(src,owner,id,redraw){const d=$('#pdlg');d.className='sheet';
 
 /* --- локация --- */
 const getPos=()=>new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('нет геолокации'));navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),no,{enableHighAccuracy:true,timeout:15000,maximumAge:60000})});
-const geocode=async(lat,lon)=>{try{const r=await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&accept-language=en`);const j=await r.json();const a=j.address||{};const st=[a.house_number,a.road].filter(Boolean).join(' ');return [st,a.city||a.town||a.suburb].filter(Boolean).join(', ')||j.display_name||''}catch(e){return ''}};
+const geocode=async(lat,lon)=>{try{const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo&language=ru`);const j=await r.json();return j.results?.[0]?.formatted_address||''}catch(e){return ''}};
 const dist=(a,b)=>{const R=6371e3,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 let lastLoc=null;
 let nearSite=null;
@@ -254,7 +254,7 @@ async function locate(quiet){
     const p=await getPos();const addr=await geocode(p.lat,p.lon);
     lastLoc={...p,addr:addr||`${p.lat.toFixed(5)}, ${p.lon.toFixed(5)}`};
     const near=D.sites.filter(s=>s.lat!=null).map(s=>({s,d:dist(p,s)})).sort((a,b)=>a.d-b.d)[0];
-    nearSite=near&&near.d<300?near.s:null;
+    nearSite=near&&near.d<200?near.s:null;
     if(nearSite&&!D.cur){$('#site').value=nearSite.id;showSiteMap()}
     $('#addr').textContent='📍 Вы здесь: '+lastLoc.addr+(nearSite?` — рядом с «${nearSite.name}»`:'');
     showNear();
@@ -262,8 +262,37 @@ async function locate(quiet){
     return lastLoc;
   }catch(e){if(!quiet)$('#addr').textContent='Не удалось определить место. Разрешите геопозицию для Safari или выберите объект из списка.';return null}
 }
-function showNear(){const c=$('#nearCard');if(!nearSite||D.cur){c.hidden=true;return}$('#nearTxt').textContent=`Вы рядом с объектом «${nearSite.name}». Начать смену?`;c.hidden=false}
-const fwdGeocode=async q=>{try{const r=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ca&q='+encodeURIComponent(q));const j=await r.json();return j[0]?{lat:+j[0].lat,lon:+j[0].lon}:null}catch(e){return null}};
+let nearCardDismissed=false,lastNearState='';
+function showNear(){
+  const c=D.cur,card=$('#nearCard'),btns=$('#nearBtns');
+  let state='';
+  if(!c&&nearSite)state='start:'+nearSite.id;
+  else if(c&&!c.onBreak&&lastLoc){const site=D.sites.find(x=>x.id===c.siteId);if(site?.lat!=null&&dist(lastLoc,site)>350)state='pause:'+c.id;}
+  else if(c&&c.onBreak&&lastLoc){const site=D.sites.find(x=>x.id===c.siteId);if(site?.lat!=null&&dist(lastLoc,site)<200)state='resume:'+c.id;}
+  if(!state){card.hidden=true;nearCardDismissed=false;lastNearState='';return}
+  if(state!==lastNearState)nearCardDismissed=false;
+  lastNearState=state;
+  if(nearCardDismissed)return;
+  if(state.startsWith('start:')){
+    $('#nearTxt').textContent=`Вы рядом с «${nearSite.name}». Начать смену?`;
+    btns.innerHTML='<button id="nearGo" type="button" style="flex:1">▶ Начать смену</button>';
+    $('#nearGo').onclick=()=>{$('#site').value=nearSite.id;startShift(nearSite.id);card.hidden=true};
+  }else if(state.startsWith('pause:')){
+    const site=D.sites.find(x=>x.id===c.siteId);const d=Math.round(dist(lastLoc,site));
+    $('#nearTxt').textContent=`Вы отошли от «${site.name}» на ${d} м.`;
+    btns.innerHTML='<button class="or" id="nearPause" type="button" style="flex:1">☕ Пауза</button><button class="sec sm" id="nearDis" type="button">Не сейчас</button>';
+    $('#nearPause').onclick=()=>{c.breaks.push({s:Date.now()});c.onBreak=true;logEv('Пауза (отошёл от объекта)');save();renderShift();card.hidden=true};
+    $('#nearDis').onclick=()=>{nearCardDismissed=true;card.hidden=true};
+  }else if(state.startsWith('resume:')){
+    const site=D.sites.find(x=>x.id===c.siteId);
+    $('#nearTxt').textContent=`Вы вернулись на «${site.name}». Продолжить?`;
+    btns.innerHTML='<button id="nearRes" type="button" style="flex:1">▶ Продолжить</button><button class="sec sm" id="nearDis2" type="button">Не сейчас</button>';
+    $('#nearRes').onclick=()=>{c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv('Конец перерыва (вернулся на объект)');save();renderShift();card.hidden=true};
+    $('#nearDis2').onclick=()=>{nearCardDismissed=true;card.hidden=true};
+  }
+  card.hidden=false;
+}
+const fwdGeocode=async q=>{try{const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo&language=ru`);const j=await r.json();if(j.results?.[0]){const l=j.results[0].geometry.location;return{lat:l.lat,lon:l.lng}}return null}catch(e){return null}};
 
 /* --- смена --- */
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
@@ -293,18 +322,29 @@ function startShift(siteId){const st=D.sites.find(x=>x.id===siteId);
   D.cur={id:uid(),start:Date.now(),siteId:siteId||'',address:st?.addr||'',breaks:[],photos:[],note:''};
   logEv('НАЧАЛО смены — '+siteName(D.cur.siteId));save();renderSites();renderShift();showNear();toast('Смена начата');
   locate(true).then(l=>{if(l&&D.cur&&!D.cur.address){D.cur.address=l.addr;save()}if(l)logEv('Место: '+l.addr)})}
-$('#nearGo').onclick=()=>{if(nearSite&&!D.cur){$('#site').value=nearSite.id;startShift(nearSite.id)}};
+let geoWatchId=null;
+function startGeoWatch(){
+  if(!navigator.geolocation||geoWatchId!==null)return;
+  geoWatchId=navigator.geolocation.watchPosition(p=>{
+    lastLoc={lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy};
+    const near=D.sites.filter(s=>s.lat!=null).map(s=>({s,d:dist(lastLoc,s)})).sort((a,b)=>a.d-b.d)[0];
+    nearSite=near&&near.d<200?near.s:null;
+    if(nearSite&&!D.cur){$('#site').value=nearSite.id;showSiteMap()}
+    showNear();
+    if(D.cur&&!D.cur.lat){D.cur.lat=lastLoc.lat;D.cur.lon=lastLoc.lon;save()}
+  },()=>{},{enableHighAccuracy:true,maximumAge:15000});
+}
 function goTab(t){document.querySelector(`nav button[data-t="${t}"]`).click()}
 
 
 $('#ctrls').addEventListener('click',async e=>{
   const id=e.target.closest('button')?.id;
   if(id==='bStart')startShift($('#site').value);
-  if(id==='bBreak'){const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv('Конец перерыва')}else{c.breaks.push({s:Date.now()});c.onBreak=true;logEv('Перерыв')}save();renderShift()}
+  if(id==='bBreak'){const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv('Конец перерыва')}else{c.breaks.push({s:Date.now()});c.onBreak=true;logEv('Перерыв')}save();renderShift();showNear()}
   if(id==='bStop')confirmBox('Закончить смену?',`Отработано ${hms(workMs(D.cur))}`,()=>{
     const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();delete c.onBreak}
     c.end=Date.now();c.siteName=siteName(c.siteId);D.shifts.unshift(c);D.cur=null;
-    logEv(`КОНЕЦ смены — ${c.siteName}, ${hrs(workMs(c))} ч`+(c.note?` · ${c.note}`:''));save();renderShift();renderLog();renderReport();toast('Смена сохранена');
+    logEv(`КОНЕЦ смены — ${c.siteName}, ${hrs(workMs(c))} ч`+(c.note?` · ${c.note}`:''));save();renderShift();renderLog();renderReport();showNear();toast('Смена сохранена');
   });
 });
 $('#site').onchange=()=>{showSiteMap();if(D.cur){D.cur.siteId=$('#site').value;logEv('Объект: '+siteName(D.cur.siteId));save();tick()}};
@@ -436,9 +476,9 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.query
 function renderAll(){renderSites();renderShift();renderLog();renderReport()}
 renderAll();
 try{navigator.storage?.persist?.()}catch(e){}
-(async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}if(!D.cur&&D.sites.some(s=>s.lat!=null))locate(true)})();
+(async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}locate(true);startGeoWatch()})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!D.cur&&D.sites.some(s=>s.lat!=null))locate(true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){locate(true);startGeoWatch()}});
 window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,getPos,toast,esc,setPending:p=>{sPos=p}};
 }
 </script>
