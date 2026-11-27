@@ -3,18 +3,7 @@
 (function () {
   const SM = window.SM; if (!SM) return;
   const $ = s => document.querySelector(s);
-  const KEY = 'AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo';
-  let gP = null;
-
-  const loadGoogle = () => gP || (gP = new Promise((ok, no) => {
-    if (window.google?.maps) return ok(window.google.maps);
-    const cb = '_gmc' + Date.now();
-    window[cb] = () => { delete window[cb]; ok(window.google.maps); };
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${KEY}&callback=${cb}`;
-    s.onerror = () => { gP = null; no(new Error('Карта не загрузилась — нужен интернет')); };
-    document.head.appendChild(s);
-  }));
+  const loadGoogle = SM.loadGoogle;
 
   const css = document.createElement('style');
   css.textContent = `

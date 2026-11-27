@@ -244,7 +244,10 @@ function openPhoto(src,owner,id,redraw){const d=$('#pdlg');d.className='sheet';
 
 /* --- локация --- */
 const getPos=()=>new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('нет геолокации'));navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),no,{enableHighAccuracy:true,timeout:15000,maximumAge:60000})});
-const geocode=async(lat,lon)=>{try{const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lon}&key=AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo&language=ru`);const j=await r.json();return j.results?.[0]?.formatted_address||''}catch(e){return ''}};
+const GKEY='AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo';let gP=null;
+const loadGoogle=()=>gP||(gP=new Promise((ok,no)=>{if(window.google?.maps)return ok(window.google.maps);const cb='_gmc'+Date.now();window[cb]=()=>{delete window[cb];ok(window.google.maps)};const s=document.createElement('script');s.src=`https://maps.googleapis.com/maps/api/js?key=${GKEY}&language=ru&callback=${cb}`;s.onerror=()=>{gP=null;s.remove();no(new Error('Карта не загрузилась — нужен интернет'))};document.head.appendChild(s)}));
+const gGeo=async req=>{const g=await loadGoogle();const{results}=await new g.Geocoder().geocode(req);return results?.[0]||null};
+const geocode=async(lat,lon)=>{try{return (await gGeo({location:{lat,lng:lon}}))?.formatted_address||''}catch(e){return ''}};
 const dist=(a,b)=>{const R=6371e3,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 let lastLoc=null;
 let nearSite=null;
@@ -292,7 +295,7 @@ function showNear(){
   }
   card.hidden=false;
 }
-const fwdGeocode=async q=>{try{const r=await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo&language=ru`);const j=await r.json();if(j.results?.[0]){const l=j.results[0].geometry.location;return{lat:l.lat,lon:l.lng}}return null}catch(e){return null}};
+const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(!r)return null;const l=r.geometry.location;return{lat:l.lat(),lon:l.lng()}}catch(e){return null}};
 
 /* --- смена --- */
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
@@ -479,7 +482,7 @@ try{navigator.storage?.persist?.()}catch(e){}
 (async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}locate(true);startGeoWatch()})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){locate(true);startGeoWatch()}});
-window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,getPos,toast,esc,setPending:p=>{sPos=p}};
+window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,loadGoogle,getPos,toast,esc,setPending:p=>{sPos=p}};
 }
 </script>
 <script src="map.js"></script>
