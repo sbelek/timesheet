@@ -258,7 +258,7 @@ async function locate(quiet){
     const near=D.sites.filter(s=>s.lat!=null).map(s=>({s,d:dist(p,s)})).sort((a,b)=>a.d-b.d)[0];
     nearSite=near&&near.d<200?near.s:null;
     if(nearSite&&!D.cur){$('#site').value=nearSite.id;showSiteMap()}
-    $('#addr').textContent='';
+    $('#addr').textContent=quiet?'':'📍 '+lastLoc.addr;
     showNear();
     if(D.cur&&!D.cur.lat){D.cur.address=D.cur.address||lastLoc.addr;D.cur.lat=p.lat;D.cur.lon=p.lon;save()}
     return lastLoc;
@@ -305,7 +305,7 @@ function renderSites(){
   const cur=$('#site').value;
   $('#site').innerHTML='<option value="">— Без объекта —</option>'+D.sites.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   $('#site').value=D.cur?D.cur.siteId||'':cur;showSiteMap();
-  $('#siteList').innerHTML=D.sites.length?D.sites.map(s=>`<div class="item"><div data-site="${esc(s.id)}"><b>${esc(s.name)}</b><small>${esc(s.addr||'без адреса')}</small>${mapLink(siteQuery(s))}${s.lat==null?`<button class="pin" data-pin="${esc(s.id)}" type="button">📍 Привязать к этому месту</button>`:''}</div><button class="sec sm" data-del="${esc(s.id)}" type="button">Удалить</button></div>`).join(''):'<div class="empty">Объектов пока нет</div>';
+  $('#siteList').innerHTML=D.sites.length?D.sites.map(s=>`<div class="item"><div data-site="${esc(s.id)}"><b>${esc(s.name)}</b><small>${esc(s.addr||'без адреса')}</small>${mapLink(siteQuery(s))}${s.lat==null?`<button class="pin" data-pin="${esc(s.id)}" type="button">${s.addr?'📍 Найти точку по адресу':'📍 Привязать к этому месту'}</button>`:''}</div><button class="sec sm" data-del="${esc(s.id)}" type="button">Удалить</button></div>`).join(''):'<div class="empty">Объектов пока нет</div>';
 }
 function renderShift(){
   const c=D.cur,ctr=$('#ctrls');
@@ -402,7 +402,9 @@ let sPos=null;
 $('#sAddr').addEventListener('input',()=>{if(sPos){sPos=null;$('#sCoords').textContent='Адрес изменён — координаты возьму по адресу'}});
 $('#sLoc').onclick=async()=>{$('#sCoords').textContent='Определяю…';try{const p=await getPos();sPos=p;const a=await geocode(p.lat,p.lon);$('#sAddr').value=a;$('#sCoords').textContent=`Координаты сохранены (точность ~${Math.round(p.acc)} м)`}catch(e){$('#sCoords').textContent='Геолокация недоступна — впишите адрес вручную'}};
 $('#sAdd').onclick=async()=>{const n=$('#sName').value.trim();if(!n)return toast('Введите название');const ad=$('#sAddr').value.trim();let pos=sPos;if(!pos&&ad){$('#sCoords').textContent='Ищу адрес на карте…';pos=await fwdGeocode(ad)}D.sites.push({id:uid(),name:n,addr:ad,lat:pos?.lat,lon:pos?.lon});if(!pos)setTimeout(()=>toast('Координаты не найдены — нажмите «Привязать к этому месту»'),2300);logEv('Новый объект: '+n);sPos=null;$('#sName').value=$('#sAddr').value='';$('#sCoords').textContent='';save();renderSites();toast('Объект добавлен')};
-$('#siteList').addEventListener('click',async e=>{const pn=e.target.closest('[data-pin]');if(pn){const s=D.sites.find(x=>x.id===pn.dataset.pin);if(!s)return;pn.textContent='Определяю…';try{const p=await getPos();s.lat=p.lat;s.lon=p.lon;if(!s.addr)s.addr=await geocode(p.lat,p.lon);save();renderSites();toast('Объект привязан к этому месту')}catch(err){toast('Не удалось определить место');renderSites()}return}const id=e.target.dataset.del;if(id)confirmBox('Удалить объект?',siteName(id),()=>{D.sites=D.sites.filter(s=>s.id!==id);save();renderSites()})});
+$('#siteList').addEventListener('click',async e=>{const pn=e.target.closest('[data-pin]');if(pn){const s=D.sites.find(x=>x.id===pn.dataset.pin);if(!s)return;pn.textContent='Определяю…';
+if(s.addr){const a=await fwdGeocode(s.addr);if(a){s.lat=a.lat;s.lon=a.lon;save();renderSites();toast('Точка взята по адресу объекта')}else{toast('Адрес не найден — укажите точку через «Изменить / на карте»');renderSites()}return}
+try{const p=await getPos();s.lat=p.lat;s.lon=p.lon;s.addr=await geocode(p.lat,p.lon);save();renderSites();toast('Объект привязан к этому месту')}catch(err){toast('Не удалось определить место');renderSites()}return}const id=e.target.dataset.del;if(id)confirmBox('Удалить объект?',siteName(id),()=>{D.sites=D.sites.filter(s=>s.id!==id);save();renderSites()})});
 
 /* --- отчёт --- */
 const monday=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
@@ -475,7 +477,7 @@ function restoreFrom(text){let j;try{j=JSON.parse(String(text).trim().replace(/^
 $('#bkIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)restoreFrom(await f.text())};
 
 /* --- вкладки --- */
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();scrollTo(0,0)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate(true);scrollTo(0,0)});
 function renderAll(){renderSites();renderShift();renderLog();renderReport()}
 renderAll();
 try{navigator.storage?.persist?.()}catch(e){}
