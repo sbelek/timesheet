@@ -21,13 +21,16 @@
 :root{--bg:#1d1f21;--card:#2a2d30;--line:#3a3e42;--ink:#f3f1ea;--mute:#a4a8ac;--y:#ffc400;--o:#ff7a1a;--r:#ff5252;--g:#7ed957}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Barlow,-apple-system,system-ui,sans-serif;overflow-x:clip}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Barlow,-apple-system,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
+/* каркас приложения: шапка и меню на месте, прокручивается только main.
+   --vvh/--vvt — видимая область (уменьшается, когда открыта клавиатура iPhone) */
+body{position:fixed;left:0;right:0;top:var(--vvt,0px);height:var(--vvh,100dvh);display:flex;flex-direction:column}
 h1,h2,.big,.num{font-family:"Barlow Condensed",Barlow,system-ui,sans-serif}
-header{padding:calc(env(safe-area-inset-top) + 12px) 18px 6px;display:flex;align-items:center;gap:10px}
+header{flex:none;padding:calc(env(safe-area-inset-top) + 12px) 18px 6px;display:flex;align-items:center;gap:10px}
 header h1{margin:0;font-size:28px;letter-spacing:.5px}
 header .dot{width:14px;height:14px;border-radius:3px;background:var(--y)}
 header .lang{margin-left:auto;min-height:44px;min-width:56px;font-size:16px;padding:0 12px}
-main{padding:6px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+main{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px max(16px,calc((100% - 608px)/2)) 24px}
 section{display:none}section.on{display:block}
 h2{font-size:24px;margin:18px 0 10px}
 .card{background:var(--card);border-radius:14px;padding:14px;margin:10px 0;border:1px solid var(--line)}
@@ -65,11 +68,12 @@ textarea{min-height:80px;resize:vertical}
 .bar{height:10px;border-radius:5px;background:#16181a;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--y)}
 details summary{cursor:pointer;font-weight:600;min-height:28px}
 pre{white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace;background:#16181a;border-radius:10px;padding:12px;max-height:320px;overflow:auto;margin:10px 0 0}
-nav{position:fixed;left:0;right:0;bottom:0;background:#141618;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+nav{flex:none;background:#141618;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
 nav button{background:none;color:var(--mute);flex-direction:column;gap:2px;font-size:13px;min-height:56px}
 nav button svg{width:24px;height:24px}
 nav button.on{color:var(--y)}
 .empty{color:var(--mute);text-align:center;padding:20px}
+html.kb nav{display:none}
 .toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#1d1f21;padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
 .toast.on{opacity:1}
 dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(560px,94vw);max-width:94vw;max-height:88dvh;overflow-y:auto;overflow-x:hidden;padding:16px;overscroll-behavior:contain}
@@ -77,8 +81,11 @@ dialog input,dialog select,dialog textarea{max-width:100%}
 input[type=datetime-local]{-webkit-appearance:none;appearance:none;display:block;text-align:left;line-height:22px}
 input[type=datetime-local]::-webkit-date-and-time-value{text-align:left}
 dialog::backdrop{background:#000a}
-dialog.sheet{width:100%;max-width:100%;height:100%;max-height:100%;margin:0;inset:0;border:0;border-radius:0;padding:0;background:var(--bg)}
-.sh-h{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 6px) 8px 6px;background:#141618;border-bottom:1px solid var(--line)}
+dialog.sheet{width:100%;max-width:100%;max-height:none;margin:0;left:0;right:0;bottom:auto;top:var(--vvt,0px);height:var(--vvh,100dvh);border:0;border-radius:0;padding:0;background:var(--bg);overflow:hidden}
+/* окно-лист: строка Cancel/Save закреплена, прокручивается только форма */
+dialog.sheet[open]{display:flex;flex-direction:column}
+dialog.sheet>.sh-b{flex:1;min-height:0;width:100%;max-width:none;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding-inline:max(16px,calc((100% - 608px)/2))}
+.sh-h{flex:none;z-index:2;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top) + 6px) 8px 6px;background:#141618;border-bottom:1px solid var(--line)}
 .sh-h b{font:700 20px "Barlow Condensed",Barlow,system-ui,sans-serif;text-align:center}
 .sh-h .link{background:none;color:var(--ink);font-weight:600;min-height:48px;padding:0 10px;justify-self:start}
 .sh-h .link.y{color:var(--y);justify-self:end}
@@ -398,7 +405,7 @@ function editShift(id,copyId){
   const calc=()=>{const day=$('#eD').value,a=$('#eS').value,b=$('#eE').value;if(!day||!a||!b)return null;let st=new Date(day+'T'+a).getTime(),en=new Date(day+'T'+b).getTime();if(en<st)en+=864e5;const bm=Math.max(0,+$('#eB').value||0)*6e4;return{st,en,bm,w:en-st-bm}};
   const upd=()=>{const c=calc();$('#eTot').textContent=c?hrs(Math.max(0,c.w))+' '+H():'—'};upd();
   ['eD','eS','eE','eB'].forEach(k=>$('#'+k).addEventListener('input',upd));
-  d.showModal();d.scrollTop=0;
+  d.showModal();d.querySelector('.sh-b').scrollTop=0;
   $('#eAdd').onchange=async ev=>{const fs=[...ev.target.files];ev.target.value='';await addPhotos(s,fs,$('#eP'));renderLog()};
   // отмена новой смены: удалить уже снятые для неё фото
   $('#eX').onclick=()=>{if(isNew)(s.photos||[]).forEach(x=>pDel(x).catch(()=>{}));d.close()};
@@ -511,7 +518,14 @@ function restoreFrom(text){let j;try{j=JSON.parse(String(text).trim().replace(/^
 $('#bkIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)restoreFrom(await f.text())};
 
 /* --- вкладки --- */
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate();scrollTo(0,0)});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate();$('main').scrollTop=0});
+// клавиатура iPhone не уменьшает экран, а сдвигает видимую область — подгоняем каркас и окна под неё
+{const vv=window.visualViewport,root=document.documentElement;
+  const fit=()=>{if(!vv)return;root.style.setProperty('--vvh',vv.height+'px');root.style.setProperty('--vvt',vv.offsetTop+'px');root.classList.toggle('kb',vv.height<window.innerHeight*0.8);
+    const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))requestAnimationFrame(()=>a.scrollIntoView({block:'nearest'}))};
+  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);fit()}
+  // если iOS всё же прокрутил документ к полю ввода — вернуть его на место
+  window.addEventListener('scroll',()=>{if(window.scrollY)window.scrollTo(0,0)})}
 function renderAll(){renderSites();renderShift();renderLog();renderReport()}
 $('#langBtn').onclick=()=>{LANG=LANG==='ru'?'en':'ru';try{localStorage.setItem(LK,LANG)}catch(e){}
   applyLang();renderAll();lastNearState='';showNear();document.dispatchEvent(new Event('langchange'))};
