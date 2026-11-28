@@ -122,6 +122,7 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 
 <section id="t-log">
   <h2 data-ru="Журнал смен">Shift log</h2>
+  <button class="sec" id="addShift" type="button" style="width:100%" data-ru="+ Добавить смену">+ Add shift</button>
   <div id="logList"></div>
 </section>
 
@@ -369,13 +370,15 @@ function confirmBox(title,text,yes){const d=$('#dlg');d.className='';d.innerHTML
 const toLocal=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
 const dOnly=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const tOnly=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())};
+// id — редактировать смену из журнала; без id — новая смена, добавленная вручную
 function editShift(id){
-  const s=D.shifts.find(x=>x.id===id);if(!s)return;const d=$('#dlg');d.className='sheet';
-  d.innerHTML=`<div class="sh-h"><button class="link" id="eX" type="button" autofocus>${T('Cancel','Отмена')}</button><b>${T('Shift','Смена')}</b><button class="link y" id="eOk" type="button">${T('Save','Сохранить')}</button></div>
+  const isNew=!id;
+  const s=isNew?{id:uid(),start:null,end:null,siteId:$('#site').value||'',address:'',breaks:[],photos:[],note:'',manual:true}:D.shifts.find(x=>x.id===id);if(!s)return;const d=$('#dlg');d.className='sheet';
+  d.innerHTML=`<div class="sh-h"><button class="link" id="eX" type="button" autofocus>${T('Cancel','Отмена')}</button><b>${isNew?T('Add shift','Добавить смену'):T('Shift','Смена')}</b><button class="link y" id="eOk" type="button">${T('Save','Сохранить')}</button></div>
   <div class="sh-b">
-  <label for="eD">${T('Date','Дата')}</label><input id="eD" type="date" value="${dOnly(s.start)}">
-  <div class="two"><div><label for="eS">${T('Start','Начало')}</label><input id="eS" type="time" value="${tOnly(s.start)}"></div>
-  <div><label for="eE">${T('End','Конец')}</label><input id="eE" type="time" value="${tOnly(s.end)}"></div></div>
+  <label for="eD">${T('Date','Дата')}</label><input id="eD" type="date" value="${dOnly(s.start??Date.now())}">
+  <div class="two"><div><label for="eS">${T('Start','Начало')}</label><input id="eS" type="time" value="${s.start?tOnly(s.start):''}"></div>
+  <div><label for="eE">${T('End','Конец')}</label><input id="eE" type="time" value="${s.end?tOnly(s.end):''}"></div></div>
   <div class="two"><div><label for="eB">${T('Break, min','Перерыв, мин')}</label><input id="eB" type="number" inputmode="numeric" value="${Math.round(breakMs(s)/6e4)}"></div>
   <div><label>${T('Total','Итого')}</label><div id="eTot" class="tot"></div></div></div>
   <label for="eSite">${T('Site','Объект')}</label><select id="eSite"><option value="">${T('— No site —','— Без объекта —')}</option>${D.sites.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select>
@@ -383,7 +386,7 @@ function editShift(id){
   <label for="eN">${T('Note','Заметка')}</label><textarea id="eN">${esc(s.note)}</textarea>
   <label>${T('Photos','Фото')}</label><div id="eP" class="thumbs"></div>
   <label class="btn sec" style="margin:10px 0 0;color:var(--ink);font-size:16px;min-height:48px;width:100%">${T('📷 Add photo','📷 Добавить фото')}<input id="eAdd" type="file" accept="image/*" multiple hidden></label>
-  <button class="rd" id="eDel" type="button" style="width:100%;margin-top:28px">${T('Delete shift','Удалить смену')}</button>
+  ${isNew?'':`<button class="rd" id="eDel" type="button" style="width:100%;margin-top:28px">${T('Delete shift','Удалить смену')}</button>`}
   </div>`;
   $('#eSite').value=s.siteId||'';const eMap=()=>{const x=D.sites.find(y=>y.id===$('#eSite').value);const q=s.address||siteQuery(x);$('#eMap').innerHTML=q?`📍 ${esc(s.address||x.addr||'')} ${mapLink(q)}`:''};eMap();$('#eSite').addEventListener('change',eMap);thumbs(s,$('#eP'));
   const calc=()=>{const day=$('#eD').value,a=$('#eS').value,b=$('#eE').value;if(!day||!a||!b)return null;let st=new Date(day+'T'+a).getTime(),en=new Date(day+'T'+b).getTime();if(en<st)en+=864e5;const bm=Math.max(0,+$('#eB').value||0)*6e4;return{st,en,bm,w:en-st-bm}};
@@ -391,11 +394,14 @@ function editShift(id){
   ['eD','eS','eE','eB'].forEach(k=>$('#'+k).addEventListener('input',upd));
   d.showModal();d.scrollTop=0;
   $('#eAdd').onchange=async ev=>{const fs=[...ev.target.files];ev.target.value='';await addPhotos(s,fs,$('#eP'));renderLog()};
-  $('#eX').onclick=()=>d.close();
+  // отмена новой смены: удалить уже снятые для неё фото
+  $('#eX').onclick=()=>{if(isNew)(s.photos||[]).forEach(x=>pDel(x).catch(()=>{}));d.close()};
   $('#eOk').onclick=()=>{const c=calc();if(!c)return toast(T('Fill in date and time','Заполните дату и время'));if(c.w<0)return toast(T('Break is longer than the shift','Перерыв больше смены'));
     s.start=c.st;s.end=c.en;s.breaks=c.bm?[{s:c.st,e:c.st+c.bm}]:[];s.siteId=$('#eSite').value;s.siteName=siteName(s.siteId);s.note=$('#eN').value;
-    logEv(T(`Shift edited ${fD(c.st)} — ${hrs(workMs(s))} h`,`Изменена смена ${fD(c.st)} — ${hrs(workMs(s))} ч`));save();d.close();renderLog();renderReport();toast(T('Saved','Сохранено'))};
-  $('#eDel').onclick=()=>{const b=$('#eDel');if(!b.dataset.sure){b.dataset.sure=1;b.textContent=T('Really delete the shift?','Точно удалить смену?');return}
+    if(isNew){s.address=D.sites.find(x=>x.id===s.siteId)?.addr||'';D.shifts.push(s);logEv(T(`Shift added manually ${fD(c.st)} — ${hrs(workMs(s))} h`,`Смена добавлена вручную ${fD(c.st)} — ${hrs(workMs(s))} ч`))}
+    else logEv(T(`Shift edited ${fD(c.st)} — ${hrs(workMs(s))} h`,`Изменена смена ${fD(c.st)} — ${hrs(workMs(s))} ч`));
+    D.shifts.sort((a,b)=>b.start-a.start);save();d.close();renderLog();renderReport();toast(isNew?T('Shift added','Смена добавлена'):T('Saved','Сохранено'))};
+  if(!isNew)$('#eDel').onclick=()=>{const b=$('#eDel');if(!b.dataset.sure){b.dataset.sure=1;b.textContent=T('Really delete the shift?','Точно удалить смену?');return}
     (s.photos||[]).forEach(x=>pDel(x).catch(()=>{}));D.shifts=D.shifts.filter(x=>x.id!==id);logEv(T('Shift deleted ','Удалена смена ')+fD(s.start));save();d.close();renderLog();renderReport();toast(T('Shift deleted','Смена удалена'))};
 }
 
@@ -406,6 +412,7 @@ function renderLog(){
   $('#logList').innerHTML=Object.values(g).map(arr=>`<div class="card"><b>${esc(fD(arr[0].start))}</b>${arr.map(s=>`<div class="item" data-ed="${esc(s.id)}" role="button" tabindex="0"><div><b>${esc(s.siteName||siteName(s.siteId))}</b><small>${fT(s.start)}–${fT(s.end)}${breakMs(s)?T(' · break ',' · перерыв ')+Math.round(breakMs(s)/6e4)+T(' min',' мин'):''}${s.photos?.length?' · 📷 '+s.photos.length:''}</small>${s.note?`<small>${esc(s.note)}</small>`:''}</div><div class="num">${hrs(workMs(s))} ${H()}</div></div>`).join('')}</div>`).join('');
 }
 $('#logList').addEventListener('click',e=>{const it=e.target.closest('[data-ed]');if(it)editShift(it.dataset.ed)});
+$('#addShift').onclick=()=>editShift();
 
 /* --- объекты --- */
 let sPos=null;
