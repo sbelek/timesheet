@@ -20,6 +20,8 @@
    LAYOUT: одна колонка, нижняя панель вкладок, кнопки 56px */
 :root{--bg:#1d1f21;--card:#2a2d30;--line:#3a3e42;--ink:#f3f1ea;--mute:#a4a8ac;--y:#ffc400;--o:#ff7a1a;--r:#ff5252;--g:#7ed957}
 *{box-sizing:border-box;min-width:0;-webkit-tap-highlight-color:transparent}
+/* без увеличения по двойному тапу (масштаб двумя пальцами остаётся) */
+html,body,button,a,input,select,textarea,label{touch-action:manipulation}
 [hidden]{display:none!important}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Barlow,-apple-system,system-ui,sans-serif;overflow:hidden;overscroll-behavior:none}
 /* каркас приложения: шапка и меню на месте, прокручивается только main.
@@ -64,7 +66,17 @@ textarea{min-height:80px;resize:vertical}
 .num{font-size:26px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stats.two{grid-template-columns:repeat(2,minmax(0,1fr))}
-.stepper{flex-wrap:nowrap}.stepper button{flex:none;width:56px;font-size:24px}.stepper input{text-align:center;font-size:20px}
+/* барабан выбора этажа: прокрутка с привязкой к центру */
+.wheelbox{display:flex;align-items:center;gap:16px}
+.wheelwrap{position:relative;flex:none;width:132px}
+.wheelwrap::after{content:'';position:absolute;left:10px;right:10px;top:48px;height:48px;border-block:2px solid var(--y);border-radius:2px;pointer-events:none}
+.wheel{height:144px;overflow-y:auto;scroll-snap-type:y mandatory;padding:48px 0;scrollbar-width:none;overscroll-behavior:contain;background:#16181a;border:0;box-shadow:inset 0 0 0 1px var(--line);border-radius:12px;outline:none;
+  -webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
+.wheel::-webkit-scrollbar{display:none}
+.wheel:focus-visible{box-shadow:inset 0 0 0 1px var(--line),0 0 0 3px var(--y)}
+.wo{height:48px;display:flex;align-items:center;justify-content:center;scroll-snap-align:center;font:600 22px "Barlow Condensed",Barlow,sans-serif;color:var(--mute);cursor:pointer;user-select:none}
+.wo.on{color:var(--ink);font-size:32px}
+.wheelbox .addr{margin:0;font-size:16px}
 .wxrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.wxrow:first-child{border-top:0}
 .wxrow small{color:var(--mute);display:block}.wxrow .num{font-size:30px}
 .tbl{overflow-x:auto;margin-top:8px}
@@ -169,13 +181,11 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
   <div class="card">
     <label for="wxSite" data-ru="Объект">Site</label>
     <select id="wxSite"></select>
-    <label for="wxFloor" data-ru="Этаж">Floor</label>
-    <div class="row stepper">
-      <button class="sec" id="wxMinus" type="button" aria-label="−1">−</button>
-      <input id="wxFloor" type="number" inputmode="numeric" min="1" max="100" value="1">
-      <button class="sec" id="wxPlus" type="button" aria-label="+1">+</button>
+    <label id="wxFloorL" data-ru="Этаж">Floor</label>
+    <div class="wheelbox">
+      <div class="wheelwrap"><div id="wxWheel" class="wheel" tabindex="0" role="listbox" aria-labelledby="wxFloorL"></div></div>
+      <div id="wxH" class="addr"></div>
     </div>
-    <div id="wxH" class="addr"></div>
   </div>
   <div class="card" id="wxNow"><div class="empty" data-ru="Загружаю прогноз…">Loading forecast…</div></div>
   <div class="card" id="wxHours" hidden></div>
@@ -569,7 +579,7 @@ function windAt(hr,i,h){
 function renderWxSites(){
   const sel=$('#wxSite');const opts=[`<option value="">${T('📍 My location','📍 Моё местоположение')}</option>`].concat(D.sites.filter(s=>s.lat!=null).map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`));
   sel.innerHTML=opts.join('');sel.value=D.sites.some(s=>s.id===wxPref.site&&s.lat!=null)?wxPref.site:'';
-  $('#wxFloor').value=wxPref.floor;
+  wheelTo(wxPref.floor,false);
 }
 async function loadWx(force){
   const req=++wxReq;let lat,lon;
@@ -583,7 +593,7 @@ async function loadWx(force){
   catch(e){if(req!==wxReq)return;if(wx)drawWx();else{$('#wxNow').innerHTML=`<div class="empty">${T('No forecast — check the internet connection','Нет прогноза — проверьте интернет')}</div>`;$('#wxHours').hidden=true}$('#wxMeta').textContent=T('Could not update the forecast','Не удалось обновить прогноз')}
 }
 function drawWx(){
-  const fl=Math.max(1,Math.min(100,Math.round(+$('#wxFloor').value||1))),h=fl*FLOOR_M;
+  const fl=wxPref.floor,h=fl*FLOOR_M;
   $('#wxH').textContent=T(`≈ ${h} m above ground (${FLOOR_M} m per floor)`,`≈ ${h} м над землёй (${FLOOR_M} м на этаж)`);
   if(!wx)return;
   const hr=wx.hourly,n=new Date(),now=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:00`;
@@ -602,11 +612,16 @@ function drawWx(){
   $('#wxMeta').textContent=T(`Forecast: Open-Meteo · updated ${fT(wxAt)}. Wind above 10 m is interpolated from 10/80/120/180 m levels; gusts at height are estimated (≈). Building effects are not included.`,`Прогноз: Open-Meteo · обновлён ${fT(wxAt)}. Ветер выше 10 м рассчитан между уровнями 10/80/120/180 м; порывы на высоте — оценка (≈). Влияние самого здания не учтено.`);
 }
 $('#wxSite').onchange=()=>{wxPref.site=$('#wxSite').value;wxSave();loadWx()};
-const setFloor=f=>{f=Math.max(1,Math.min(100,Math.round(+f||1)));wxPref.floor=f;wxSave();if(+$('#wxFloor').value!==f&&document.activeElement!==$('#wxFloor'))$('#wxFloor').value=f;drawWx()};
-$('#wxFloor').oninput=()=>{if($('#wxFloor').value!=='')setFloor($('#wxFloor').value)};
-$('#wxFloor').onchange=()=>{$('#wxFloor').value=wxPref.floor};
-$('#wxMinus').onclick=()=>{$('#wxFloor').value=wxPref.floor-1;setFloor(wxPref.floor-1)};
-$('#wxPlus').onclick=()=>{$('#wxFloor').value=wxPref.floor+1;setFloor(wxPref.floor+1)};
+// барабан этажей 1–100: листается пальцем, этаж = строка по центру; цифры пересчитываются на ходу
+const WH=48,MAXF=100,wheel=$('#wxWheel');
+wheel.innerHTML=Array.from({length:MAXF},(_,i)=>`<div class="wo" role="option" id="wo${i+1}" data-f="${i+1}">${i+1}</div>`).join('');
+const markFloor=f=>{const o=wheel.querySelector('.wo.on');if(o){o.classList.remove('on');o.removeAttribute('aria-selected')}const n=$('#wo'+f);n.classList.add('on');n.setAttribute('aria-selected','true');wheel.setAttribute('aria-activedescendant','wo'+f)};
+const setFloor=f=>{f=Math.max(1,Math.min(MAXF,f));markFloor(f);if(f===wxPref.floor)return;wxPref.floor=f;wxSave();drawWx()};
+const wheelTo=(f,smooth)=>{markFloor(f);wheel.scrollTo({top:(f-1)*WH,behavior:smooth?'smooth':'auto'})};
+let wheelRaf=0;
+wheel.addEventListener('scroll',()=>{cancelAnimationFrame(wheelRaf);wheelRaf=requestAnimationFrame(()=>{if(wheel.clientHeight)setFloor(Math.round(wheel.scrollTop/WH)+1)})},{passive:true});
+wheel.addEventListener('click',e=>{const o=e.target.closest('.wo');if(o)wheelTo(+o.dataset.f,true)});
+wheel.addEventListener('keydown',e=>{const k={ArrowUp:-1,ArrowDown:1,PageUp:-10,PageDown:10}[e.key];if(k){e.preventDefault();wheelTo(Math.max(1,Math.min(MAXF,wxPref.floor+k)),true)}});
 
 /* --- вкладки --- */
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate();if(b.dataset.t==='wx'){renderWxSites();loadWx()}$('main').scrollTop=0});
