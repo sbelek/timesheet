@@ -1,17 +1,17 @@
 /* © 2026 Sherkhan (github.com/sbelek). All rights reserved. See LICENSE.
-   Выбор точки объекта на карте (Google Maps). */
+   Выбор точки объекта на карте (Google Maps) — шторка в стиле приложения.
+   Вызов: SM.openMap({ title, site?, addr?, onDone(r) }), r = { lat, lon, addr, name? } */
 (function () {
   const SM = window.SM; if (!SM) return;
   const $ = s => document.querySelector(s);
-  const loadGoogle = SM.loadGoogle;
-  const T = SM.T;
+  const T = SM.T, I = SM.I;
 
   const css = document.createElement('style');
   css.textContent = `
-  #mapBox{height:52dvh;min-height:300px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#16181a}
-  .mrow{display:flex;gap:8px;margin:8px 0}.mrow input{flex:1}.mrow button{flex:none}
-  .seg2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-  .edit-s{background:none;color:var(--mute);font-size:15px;min-height:40px;padding:0;margin-left:14px}`;
+  #mapBox{position:relative;height:52dvh;min-height:280px;border:1px solid var(--div);background:repeating-linear-gradient(135deg,var(--n300) 0 6px,var(--n200) 6px 12px)}
+  #mapBox .mapph{position:absolute;left:12px;right:12px;bottom:10px}
+  .mrow{display:flex;gap:8px;margin:12px 0 10px}.mrow .in{flex:1}.mrow .b{width:auto;flex:none;height:48px}
+  #mdlg .seg button{min-height:44px}`;
   document.head.appendChild(css);
 
   const dlg = document.createElement('dialog');
@@ -20,25 +20,26 @@
 
   function open(opts) {
     const s = opts.site;
-    dlg.innerHTML = `<div class="sh-h"><button class="link" id="mX" type="button" autofocus>${T('Cancel', 'Отмена')}</button><b>${SM.esc(opts.title)}</b><button class="link y" id="mOk" type="button">${T('Done', 'Готово')}</button></div>
+    dlg.innerHTML = `<div class="pan tall"><div class="sh-h"><button class="link" id="mX" type="button" autofocus>${T('Cancel', 'Отмена')}</button><b>${SM.esc(opts.title)}</b><button class="link y" id="mOk" type="button">${T('Done', 'Готово')}</button></div>
     <div class="sh-b">
-      ${s ? `<label for="mName">${T('Name', 'Название')}</label><input id="mName" value="${SM.esc(s.name)}">` : ''}
-      <div class="mrow"><input id="mQ" placeholder="${T('Find an address on the map', 'Найти адрес на карте')}" enterkeyhint="search"><button class="sec sm" id="mFind" type="button">${T('Find', 'Найти')}</button></div>
-      <div id="mapBox"><div class="empty" id="mLoad">${T('Loading map…', 'Загружаю карту…')}</div></div>
-      <div class="seg2"><button class="sm" id="mStreet" type="button">${T('Map', 'Схема')}</button><button class="sec sm" id="mSat" type="button">${T('Satellite', 'Спутник')}</button></div>
-      <div class="seg2"><button class="sec sm" id="mMe" type="button">${T("📍 I'm here", '📍 Я здесь')}</button><span></span></div>
-      <p class="addr" id="mHint">${T('Tap your building — a marker will appear there. You can drag the marker.', 'Нажмите на своё здание — там появится метка. Метку можно перетащить.')}</p>
-      <label for="mAddr">${T('Address', 'Адрес')}</label><input id="mAddr" value="${SM.esc(s ? s.addr || '' : ($('#sAddr')?.value || ''))}" placeholder="${T('Fills in automatically after you pick a point', 'Заполнится сам после выбора точки')}">
-    </div>`;
+      ${s ? `<label class="lbl fl" for="mName">${T('Name', 'Название')}</label><input id="mName" class="in" value="${SM.esc(s.name)}">` : ''}
+      <div class="mrow"><input id="mQ" class="in" placeholder="${T('Find an address on the map', 'Найти адрес на карте')}" enterkeyhint="search"><button class="b out" id="mFind" type="button">${T('Find', 'Найти')}</button></div>
+      <div id="mapBox"><div class="mapph" id="mLoad">${T('Loading map…', 'Загружаю карту…')}</div></div>
+      <div class="seg mt8"><button class="on" id="mStreet" type="button">${T('Map', 'Схема')}</button><button id="mSat" type="button">${T('Satellite', 'Спутник')}</button></div>
+      <button class="b out mt8" id="mMe" type="button">${I.nav()}${T("I'm here", 'Я здесь')}</button>
+      <p class="hint mt8" id="mHint">${T('Tap your building — a marker will appear there. You can drag the marker.', 'Нажмите на своё здание — там появится метка. Метку можно перетащить.')}</p>
+      <label class="lbl fl" for="mAddr">${T('Address', 'Адрес')}</label><input id="mAddr" class="in" value="${SM.esc(s ? s.addr || '' : (opts.addr || ''))}" placeholder="${T('Fills in automatically after you pick a point', 'Заполнится сам после выбора точки')}">
+    </div></div>`;
     picked = s && s.lat != null ? { lat: s.lat, lon: s.lon } : null;
-    dlg.showModal();
+    map = null; marker = null;
+    SM.openSheet(dlg);
 
-    $('#mX').onclick = () => dlg.close();
+    $('#mX').onclick = () => SM.closeSheet(dlg);
     $('#mOk').onclick = () => {
       if (!picked) return SM.toast(T('Mark a point on the map first', 'Сначала отметьте точку на карте'));
       const r = { lat: picked.lat, lon: picked.lon, addr: $('#mAddr').value.trim() };
       if (s) r.name = ($('#mName').value || '').trim() || s.name;
-      dlg.close(); opts.onDone(r);
+      SM.closeSheet(dlg); opts.onDone(r);
     };
 
     const find = async () => {
@@ -57,7 +58,7 @@
     $('#mFind').onclick = find;
     $('#mQ').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); find(); } };
 
-    loadGoogle().then(g => init(g, s)).catch(e => {
+    SM.loadGoogle().then(g => init(g, s, opts)).catch(e => {
       const el = $('#mLoad'); if (el) el.textContent = e.message;
     });
   }
@@ -65,18 +66,12 @@
   async function setPoint(g, lat, lon, fill) {
     picked = { lat, lon };
     if (!marker) {
+      // квадратная красная метка — как на карте объектов
       marker = new g.Marker({
         position: { lat, lng: lon },
         map,
         draggable: true,
-        icon: {
-          path: g.SymbolPath.CIRCLE,
-          scale: 11,
-          fillColor: '#ffc400',
-          fillOpacity: 1,
-          strokeColor: '#1d1f21',
-          strokeWeight: 3
-        }
+        icon: { path: 'M-1 -1H1V1H-1Z', scale: 9, fillColor: '#ec3013', fillOpacity: 1, strokeColor: '#201e1d', strokeWeight: 2 }
       });
       marker.addListener('dragend', () => {
         const p = marker.getPosition();
@@ -95,11 +90,10 @@
     }
   }
 
-  async function init(g, s) {
-    const loadEl = $('#mLoad'); if (loadEl) loadEl.remove();
-    if (map) { if (marker) { marker.setMap(null); marker = null; } }
-
-    map = new g.Map(document.getElementById('mapBox'), {
+  async function init(g, s, opts) {
+    const box = $('#mapBox'); if (!box || !dlg.open) return;
+    box.innerHTML = '';
+    map = new g.Map(box, {
       zoom: 11,
       center: { lat: 43.70, lng: -79.42 },
       mapTypeId: 'roadmap',
@@ -108,13 +102,14 @@
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
+      clickableIcons: false,
       gestureHandling: 'greedy'
     });
 
     const setMapType = t => {
       map.setMapTypeId(t);
-      $('#mStreet').className = t === 'roadmap' ? 'sm' : 'sec sm';
-      $('#mSat').className = t === 'satellite' ? 'sm' : 'sec sm';
+      $('#mStreet').classList.toggle('on', t === 'roadmap');
+      $('#mSat').classList.toggle('on', t === 'satellite');
     };
     $('#mStreet').onclick = () => setMapType('roadmap');
     $('#mSat').onclick = () => setMapType('satellite');
@@ -129,7 +124,7 @@
       } catch (e) { SM.toast(T('Could not get your location', 'Не удалось определить место')); }
     };
 
-    const q = s ? (s.addr || '').trim() : ($('#sAddr')?.value.trim() || '');
+    const q = s ? (s.addr || '').trim() : (opts.addr || '').trim();
     // Адрес главнее: если сохранённая точка далеко от адреса (например, привязана «Я здесь»), ставим метку по адресу
     if (picked && q) {
       const a = await SM.fwdGeocode(q);
@@ -154,48 +149,5 @@
     }
   }
 
-  const sLoc = $('#sLoc');
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button'; addBtn.className = 'sec sm'; addBtn.id = 'sMap';
-  sLoc && sLoc.parentNode.insertBefore(addBtn, sLoc.nextSibling);
-  addBtn.onclick = () => open({
-    title: T('Site point', 'Точка объекта'),
-    onDone: r => {
-      SM.setPending({ lat: r.lat, lon: r.lon });
-      if (r.addr) $('#sAddr').value = r.addr;
-      $('#sCoords').textContent = T('Point selected on the map ✓', 'Точка выбрана на карте ✓');
-    }
-  });
-
-  const editLabel = () => T('✏️ Edit / on map', '✏️ Изменить / на карте');
-  const decorate = () => document.querySelectorAll('#siteList [data-site]').forEach(d => {
-    if (d.querySelector('.edit-s')) return;
-    const e = document.createElement('button');
-    e.type = 'button'; e.className = 'edit-s'; e.dataset.edit = d.dataset.site; e.textContent = editLabel();
-    d.appendChild(e);
-  });
-  new MutationObserver(decorate).observe($('#siteList'), { childList: true, subtree: true });
-  const setTexts = () => {
-    addBtn.textContent = T('🗺 On map', '🗺 На карте');
-    document.querySelectorAll('#siteList .edit-s').forEach(e => { e.textContent = editLabel(); });
-  };
-  document.addEventListener('langchange', setTexts);
-  setTexts();
-  decorate();
-
-  $('#siteList').addEventListener('click', e => {
-    const b = e.target.closest('[data-edit]'); if (!b) return;
-    e.stopPropagation();
-    const s = SM.D.sites.find(x => x.id === b.dataset.edit); if (!s) return;
-    open({
-      title: T('Edit site', 'Изменить объект'),
-      site: s,
-      onDone: r => {
-        s.lat = r.lat; s.lon = r.lon;
-        if (r.addr) s.addr = r.addr;
-        if (r.name) s.name = r.name;
-        SM.save(); SM.renderSites(); SM.toast(T('Site updated', 'Объект обновлён'));
-      }
-    });
-  }, true);
+  SM.openMap = open;
 })();
