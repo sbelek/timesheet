@@ -279,30 +279,31 @@ function showNear(){
   const c=D.cur,card=$('#nearCard'),btns=$('#nearBtns');
   let state='';
   if(!c&&nearSite)state='start:'+nearSite.id;
-  else if(c&&!c.onBreak&&lastLoc){const site=D.sites.find(x=>x.id===c.siteId);if(site?.lat!=null&&dist(lastLoc,site)>350)state='pause:'+c.id;}
-  else if(c&&c.onBreak&&lastLoc){const site=D.sites.find(x=>x.id===c.siteId);if(site?.lat!=null&&dist(lastLoc,site)<200)state='resume:'+c.id;}
+  else if(c&&lastLoc){const site=D.sites.find(x=>x.id===c.siteId);if(site?.lat!=null){const d=dist(lastLoc,site);
+    if(d>350)state='finish:'+c.id;              // ушли с объекта во время смены (или перерыва) — напомнить закончить
+    else if(c.onBreak&&d<200)state='resume:'+c.id}}
   if(!state){card.hidden=true;nearCardDismissed=false;lastNearState='';return}
   if(state!==lastNearState)nearCardDismissed=false;
   lastNearState=state;
   if(nearCardDismissed)return;
   if(state.startsWith('start:')){
-    $('#nearTxt').textContent=T(`You are near “${nearSite.name}”. Start a shift?`,`Вы рядом с «${nearSite.name}». Начать смену?`);
-    btns.innerHTML=`<button id="nearGo" type="button" style="flex:1">${T('▶ Start shift','▶ Начать смену')}</button>`;
-    $('#nearGo').onclick=()=>{$('#site').value=nearSite.id;startShift(nearSite.id);card.hidden=true};
-  }else if(state.startsWith('pause:')){
-    const site=D.sites.find(x=>x.id===c.siteId);const d=Math.round(dist(lastLoc,site));
-    $('#nearTxt').textContent=T(`You are ${d} m away from “${site.name}”.`,`Вы отошли от «${site.name}» на ${d} м.`);
-    btns.innerHTML=`<button class="or" id="nearPause" type="button" style="flex:1">${T('☕ Pause','☕ Пауза')}</button><button class="sec sm" id="nearDis" type="button">${T('Not now','Не сейчас')}</button>`;
-    $('#nearPause').onclick=()=>{c.breaks.push({s:Date.now()});c.onBreak=true;logEv(T('Pause (left the site)','Пауза (отошёл от объекта)'));save();renderShift();card.hidden=true};
-    $('#nearDis').onclick=()=>{nearCardDismissed=true;card.hidden=true};
+    // только подсказка: объект уже выбран в списке, смену начинает основная кнопка
+    $('#nearTxt').textContent=T(`📍 You are near “${nearSite.name}” — site selected.`,`📍 Вы рядом с «${nearSite.name}» — объект выбран.`);
+    btns.innerHTML='';
+  }else if(state.startsWith('finish:')){
+    const site=D.sites.find(x=>x.id===c.siteId);const m=dist(lastLoc,site);
+    const far=m<1000?T(`${Math.round(m)} m`,`${Math.round(m)} м`):T(`${(m/1000).toFixed(1)} km`,`${(m/1000).toFixed(1).replace('.',',')} км`);
+    // только напоминание: закончить смену — основной кнопкой «Finish»
+    $('#nearTxt').textContent=T(`You are ${far} away from “${site.name}”. Don't forget to finish the shift.`,`Вы в ${far} от «${site.name}». Не забудьте закончить смену.`);
+    btns.innerHTML=`<button class="sec sm" id="nearDis" type="button">${T('Hide','Скрыть')}</button>`;
   }else if(state.startsWith('resume:')){
+    // только напоминание: продолжить — основной кнопкой «Resume»
     const site=D.sites.find(x=>x.id===c.siteId);
-    $('#nearTxt').textContent=T(`You are back at “${site.name}”. Resume?`,`Вы вернулись на «${site.name}». Продолжить?`);
-    btns.innerHTML=`<button id="nearRes" type="button" style="flex:1">${T('▶ Resume','▶ Продолжить')}</button><button class="sec sm" id="nearDis2" type="button">${T('Not now','Не сейчас')}</button>`;
-    $('#nearRes').onclick=()=>{c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv(T('Break ended (back at the site)','Конец перерыва (вернулся на объект)'));save();renderShift();card.hidden=true};
-    $('#nearDis2').onclick=()=>{nearCardDismissed=true;card.hidden=true};
+    $('#nearTxt').textContent=T(`You are back at “${site.name}”. Don't forget to resume work.`,`Вы вернулись на «${site.name}». Не забудьте продолжить работу.`);
+    btns.innerHTML=`<button class="sec sm" id="nearDis" type="button">${T('Hide','Скрыть')}</button>`;
   }
-  card.hidden=false;
+  const dis=$('#nearDis');if(dis)dis.onclick=()=>{nearCardDismissed=true;card.hidden=true};
+  btns.hidden=!btns.children.length;card.hidden=false;
 }
 const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(r){const l=r.geometry.location;return{lat:l.lat(),lon:l.lng(),addr:r.formatted_address||''}}}catch(e){console.warn('Geocoder:',e?.code||e?.message||e)}
   try{const j=await osm('search',{q,limit:1,addressdetails:1});if(j?.[0])return{lat:+j[0].lat,lon:+j[0].lon,addr:osmAddr(j[0])}}catch(e){console.warn('OSM:',e?.message||e)}return null};
@@ -347,12 +348,13 @@ $('#ctrls').addEventListener('click',async e=>{
   const id=e.target.closest('button')?.id;
   if(id==='bStart')startShift($('#site').value);
   if(id==='bBreak'){const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv(T('Break ended','Конец перерыва'))}else{c.breaks.push({s:Date.now()});c.onBreak=true;logEv(T('Break','Перерыв'))}save();renderShift();showNear()}
-  if(id==='bStop')confirmBox(T('Finish the shift?','Закончить смену?'),T(`Worked ${hms(workMs(D.cur))}`,`Отработано ${hms(workMs(D.cur))}`),()=>{
-    const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();delete c.onBreak}
-    c.end=Date.now();c.siteName=siteName(c.siteId);D.shifts.unshift(c);D.cur=null;
-    logEv(T('SHIFT END — ','КОНЕЦ смены — ')+`${c.siteName}, ${hrs(workMs(c))} ${H()}`+(c.note?` · ${c.note}`:''));save();renderShift();renderLog();renderReport();showNear();toast(T('Shift saved','Смена сохранена'));
-  });
+  if(id==='bStop')confirmBox(T('Finish the shift?','Закончить смену?'),T(`Worked ${hms(workMs(D.cur))}`,`Отработано ${hms(workMs(D.cur))}`),finishShift);
 });
+function finishShift(){
+  const c=D.cur;if(!c)return;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();delete c.onBreak}
+  c.end=Date.now();c.siteName=siteName(c.siteId);D.shifts.unshift(c);D.cur=null;
+  logEv(T('SHIFT END — ','КОНЕЦ смены — ')+`${c.siteName}, ${hrs(workMs(c))} ${H()}`+(c.note?` · ${c.note}`:''));save();renderShift();renderLog();renderReport();showNear();toast(T('Shift saved','Смена сохранена'));
+}
 $('#site').onchange=()=>{showSiteMap();if(D.cur){D.cur.siteId=$('#site').value;logEv(T('Site: ','Объект: ')+siteName(D.cur.siteId));save();tick()}};
 $('#note').oninput=()=>{if(D.cur){D.cur.note=$('#note').value;save()}};
 $('#photoIn').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(D.cur)await addPhotos(D.cur,fs,$('#curPhotos'))};
