@@ -4,6 +4,7 @@
   const SM = window.SM; if (!SM) return;
   const $ = s => document.querySelector(s);
   const loadGoogle = SM.loadGoogle;
+  const T = SM.T;
 
   const css = document.createElement('style');
   css.textContent = `
@@ -19,22 +20,22 @@
 
   function open(opts) {
     const s = opts.site;
-    dlg.innerHTML = `<div class="sh-h"><button class="link" id="mX" type="button" autofocus>Отмена</button><b>${SM.esc(opts.title)}</b><button class="link y" id="mOk" type="button">Готово</button></div>
+    dlg.innerHTML = `<div class="sh-h"><button class="link" id="mX" type="button" autofocus>${T('Cancel', 'Отмена')}</button><b>${SM.esc(opts.title)}</b><button class="link y" id="mOk" type="button">${T('Done', 'Готово')}</button></div>
     <div class="sh-b">
-      ${s ? `<label for="mName">Название</label><input id="mName" value="${SM.esc(s.name)}">` : ''}
-      <div class="mrow"><input id="mQ" placeholder="Найти адрес на карте" enterkeyhint="search"><button class="sec sm" id="mFind" type="button">Найти</button></div>
-      <div id="mapBox"><div class="empty" id="mLoad">Загружаю карту…</div></div>
-      <div class="seg2"><button class="sm" id="mStreet" type="button">Схема</button><button class="sec sm" id="mSat" type="button">Спутник</button></div>
-      <div class="seg2"><button class="sec sm" id="mMe" type="button">📍 Я здесь</button><span></span></div>
-      <p class="addr" id="mHint">Нажмите на своё здание — там появится метка. Метку можно перетащить.</p>
-      <label for="mAddr">Адрес</label><input id="mAddr" value="${SM.esc(s ? s.addr || '' : ($('#sAddr')?.value || ''))}" placeholder="Заполнится сам после выбора точки">
+      ${s ? `<label for="mName">${T('Name', 'Название')}</label><input id="mName" value="${SM.esc(s.name)}">` : ''}
+      <div class="mrow"><input id="mQ" placeholder="${T('Find an address on the map', 'Найти адрес на карте')}" enterkeyhint="search"><button class="sec sm" id="mFind" type="button">${T('Find', 'Найти')}</button></div>
+      <div id="mapBox"><div class="empty" id="mLoad">${T('Loading map…', 'Загружаю карту…')}</div></div>
+      <div class="seg2"><button class="sm" id="mStreet" type="button">${T('Map', 'Схема')}</button><button class="sec sm" id="mSat" type="button">${T('Satellite', 'Спутник')}</button></div>
+      <div class="seg2"><button class="sec sm" id="mMe" type="button">${T("📍 I'm here", '📍 Я здесь')}</button><span></span></div>
+      <p class="addr" id="mHint">${T('Tap your building — a marker will appear there. You can drag the marker.', 'Нажмите на своё здание — там появится метка. Метку можно перетащить.')}</p>
+      <label for="mAddr">${T('Address', 'Адрес')}</label><input id="mAddr" value="${SM.esc(s ? s.addr || '' : ($('#sAddr')?.value || ''))}" placeholder="${T('Fills in automatically after you pick a point', 'Заполнится сам после выбора точки')}">
     </div>`;
     picked = s && s.lat != null ? { lat: s.lat, lon: s.lon } : null;
     dlg.showModal();
 
     $('#mX').onclick = () => dlg.close();
     $('#mOk').onclick = () => {
-      if (!picked) return SM.toast('Сначала отметьте точку на карте');
+      if (!picked) return SM.toast(T('Mark a point on the map first', 'Сначала отметьте точку на карте'));
       const r = { lat: picked.lat, lon: picked.lon, addr: $('#mAddr').value.trim() };
       if (s) r.name = ($('#mName').value || '').trim() || s.name;
       dlg.close(); opts.onDone(r);
@@ -42,16 +43,16 @@
 
     const find = async () => {
       const q = $('#mQ').value.trim();
-      if (!q) { $('#mHint').textContent = 'Введите адрес в поле поиска.'; $('#mQ').focus(); return; }
-      if (!map || !window.google?.maps) { $('#mHint').textContent = 'Карта ещё загружается, подождите…'; return; }
-      $('#mHint').textContent = 'Ищу…';
+      if (!q) { $('#mHint').textContent = T('Type an address in the search box.', 'Введите адрес в поле поиска.'); $('#mQ').focus(); return; }
+      if (!map || !window.google?.maps) { $('#mHint').textContent = T('The map is still loading, please wait…', 'Карта ещё загружается, подождите…'); return; }
+      $('#mHint').textContent = T('Searching…', 'Ищу…');
       const p = await SM.fwdGeocode(q);
-      if (!p) { $('#mHint').textContent = 'Адрес не найден. Попробуйте иначе.'; return; }
+      if (!p) { $('#mHint').textContent = T('Address not found. Try wording it differently.', 'Адрес не найден. Попробуйте иначе.'); return; }
       map.setCenter({ lat: p.lat, lng: p.lon });
       map.setZoom(18);
       setPoint(window.google.maps, p.lat, p.lon, false);
       if (p.addr) $('#mAddr').value = p.addr;
-      $('#mHint').textContent = 'Нашёл — метка на адресе. Поправьте, если нужно, и нажмите «Готово».';
+      $('#mHint').textContent = T('Found — the marker is on the address. Adjust it if needed and tap “Done”.', 'Нашёл — метка на адресе. Поправьте, если нужно, и нажмите «Готово».');
     };
     $('#mFind').onclick = find;
     $('#mQ').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); find(); } };
@@ -85,12 +86,12 @@
       marker.setPosition({ lat, lng: lon });
     }
     if (fill) {
-      $('#mHint').textContent = 'Определяю адрес…';
+      $('#mHint').textContent = T('Looking up the address…', 'Определяю адрес…');
       const a = await SM.geocode(lat, lon);
       if (a) $('#mAddr').value = a;
       $('#mHint').textContent = a
-        ? 'Точка выбрана. Проверьте адрес и нажмите «Готово».'
-        : 'Точка выбрана. Адрес не определился — впишите сами.';
+        ? T('Point selected. Check the address and tap “Done”.', 'Точка выбрана. Проверьте адрес и нажмите «Готово».')
+        : T('Point selected. Address not found — type it yourself.', 'Точка выбрана. Адрес не определился — впишите сами.');
     }
   }
 
@@ -125,7 +126,7 @@
         const p = await SM.getPos();
         map.setCenter({ lat: p.lat, lng: p.lon });
         map.setZoom(18);
-      } catch (e) { SM.toast('Не удалось определить место'); }
+      } catch (e) { SM.toast(T('Could not get your location', 'Не удалось определить место')); }
     };
 
     const q = s ? (s.addr || '').trim() : ($('#sAddr')?.value.trim() || '');
@@ -138,7 +139,7 @@
       map.setCenter({ lat: p.lat, lng: p.lon });
       map.setZoom(18);
       setPoint(g, p.lat, p.lon, false);
-      if (far) $('#mHint').textContent = `Метка поставлена по адресу (старая точка была в ${Math.round(SM.dist(a, s))} м). Поправьте, если нужно, и нажмите «Готово».`;
+      if (far) { const d = Math.round(SM.dist(a, s)); $('#mHint').textContent = T(`Marker placed by the address (the old point was ${d} m away). Adjust it if needed and tap “Done”.`, `Метка поставлена по адресу (старая точка была в ${d} м). Поправьте, если нужно, и нажмите «Готово».`); }
     } else if (picked) {
       map.setCenter({ lat: picked.lat, lng: picked.lon });
       map.setZoom(18);
@@ -155,29 +156,31 @@
 
   const sLoc = $('#sLoc');
   const addBtn = document.createElement('button');
-  addBtn.type = 'button'; addBtn.className = 'sec sm'; addBtn.id = 'sMap'; addBtn.textContent = '🗺 На карте';
+  addBtn.type = 'button'; addBtn.className = 'sec sm'; addBtn.id = 'sMap';
   sLoc && sLoc.parentNode.insertBefore(addBtn, sLoc.nextSibling);
   addBtn.onclick = () => open({
-    title: 'Точка объекта',
+    title: T('Site point', 'Точка объекта'),
     onDone: r => {
       SM.setPending({ lat: r.lat, lon: r.lon });
       if (r.addr) $('#sAddr').value = r.addr;
-      $('#sCoords').textContent = 'Точка выбрана на карте ✓';
+      $('#sCoords').textContent = T('Point selected on the map ✓', 'Точка выбрана на карте ✓');
     }
   });
 
-  if (sLoc) sLoc.textContent = '📍 Я здесь';
-
-  const hint = document.querySelector('#t-sites > p.addr');
-  if (hint) hint.textContent = 'Когда вы ближе 200 м к объекту с координатами, приложение предложит начать смену.';
-
+  const editLabel = () => T('✏️ Edit / on map', '✏️ Изменить / на карте');
   const decorate = () => document.querySelectorAll('#siteList [data-site]').forEach(d => {
     if (d.querySelector('.edit-s')) return;
     const e = document.createElement('button');
-    e.type = 'button'; e.className = 'edit-s'; e.dataset.edit = d.dataset.site; e.textContent = '✏️ Изменить / на карте';
+    e.type = 'button'; e.className = 'edit-s'; e.dataset.edit = d.dataset.site; e.textContent = editLabel();
     d.appendChild(e);
   });
   new MutationObserver(decorate).observe($('#siteList'), { childList: true, subtree: true });
+  const setTexts = () => {
+    addBtn.textContent = T('🗺 On map', '🗺 На карте');
+    document.querySelectorAll('#siteList .edit-s').forEach(e => { e.textContent = editLabel(); });
+  };
+  document.addEventListener('langchange', setTexts);
+  setTexts();
   decorate();
 
   $('#siteList').addEventListener('click', e => {
@@ -185,13 +188,13 @@
     e.stopPropagation();
     const s = SM.D.sites.find(x => x.id === b.dataset.edit); if (!s) return;
     open({
-      title: 'Изменить объект',
+      title: T('Edit site', 'Изменить объект'),
       site: s,
       onDone: r => {
         s.lat = r.lat; s.lon = r.lon;
         if (r.addr) s.addr = r.addr;
         if (r.name) s.name = r.name;
-        SM.save(); SM.renderSites(); SM.toast('Объект обновлён');
+        SM.save(); SM.renderSites(); SM.toast(T('Site updated', 'Объект обновлён'));
       }
     });
   }, true);

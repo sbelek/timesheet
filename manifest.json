@@ -1,6 +1,6 @@
 {
-  "name": "Смена — учёт времени",
-  "short_name": "Смена",
+  "name": "Shift — time tracking",
+  "short_name": "Shift",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

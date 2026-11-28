@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <!-- © 2026 Sherkhan (github.com/sbelek). All rights reserved. See LICENSE. -->
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Смена">
+<meta name="apple-mobile-web-app-title" content="Shift">
 <meta name="theme-color" content="#1d1f21">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Смена — учёт времени</title>
+<title>Shift — time tracking</title>
 <style>
 /* VOICE: рабочий, прямой, крупно — пользоваться в перчатках на объекте
    IDEA: табель прораба и жёлтая каска: бетон + сигнальный жёлтый
@@ -26,6 +26,7 @@ h1,h2,.big,.num{font-family:"Barlow Condensed",Barlow,system-ui,sans-serif}
 header{padding:calc(env(safe-area-inset-top) + 12px) 18px 6px;display:flex;align-items:center;gap:10px}
 header h1{margin:0;font-size:28px;letter-spacing:.5px}
 header .dot{width:14px;height:14px;border-radius:3px;background:var(--y)}
+header .lang{margin-left:auto;min-height:44px;min-width:56px;font-size:16px;padding:0 12px}
 main{padding:6px 16px calc(96px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 section{display:none}section.on{display:block}
 h2{font-size:24px;margin:18px 0 10px}
@@ -93,26 +94,26 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&display=swap">
 </head>
 <body>
-<header><span class="dot"></span><h1>СМЕНА</h1></header>
+<header><span class="dot"></span><h1 data-ru="СМЕНА">SHIFT</h1><button class="sec lang" id="langBtn" type="button">RU</button></header>
 <main>
 
 <section id="t-shift" class="on">
   <div id="timer" class="timer">
     <div id="clock" class="big">0:00:00</div>
-    <div id="state" class="state">Смена не начата</div>
+    <div id="state" class="state">Shift not started</div>
   </div>
   <div id="nearCard" class="card near" hidden><div id="nearTxt"></div><div id="nearBtns" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"></div></div>
   <div class="card">
-    <label for="site">Объект</label>
+    <label for="site" data-ru="Объект">Site</label>
     <select id="site"></select>
     <div id="siteMap" class="addr"></div>
   </div>
   <div class="row" id="ctrls"></div>
   <div class="card" id="shiftExtra" hidden>
-    <label for="note">Заметка к смене</label>
-    <textarea id="note" placeholder="Что сделано: сверление, анкеровка, демонтаж…"></textarea>
+    <label for="note" data-ru="Заметка к смене">Shift note</label>
+    <textarea id="note" placeholder="What was done: drilling, anchoring, demolition…" data-ru-ph="Что сделано: сверление, анкеровка, демонтаж…"></textarea>
     <div class="row" style="margin-top:10px">
-      <label class="btn sec" style="margin:0;color:var(--ink);font-size:18px">📷 Фото работы
+      <label class="btn sec" style="margin:0;color:var(--ink);font-size:18px"><span data-ru="📷 Фото работы">📷 Work photo</span>
         <input id="photoIn" type="file" accept="image/*" capture="environment" multiple hidden></label>
     </div>
     <div id="curPhotos" class="thumbs"></div><div id="pStat" class="addr"></div>
@@ -120,74 +121,74 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 </section>
 
 <section id="t-log">
-  <h2>Журнал смен</h2>
+  <h2 data-ru="Журнал смен">Shift log</h2>
   <div id="logList"></div>
 </section>
 
 <section id="t-sites">
-  <h2>Объекты</h2>
+  <h2 data-ru="Объекты">Sites</h2>
   <div class="card">
-    <label for="sName">Название</label>
-    <input id="sName" placeholder="Например: Condo, Yonge &amp; Eglinton">
-    <label for="sAddr">Адрес</label>
-    <input id="sAddr" placeholder="Улица, дом, город">
+    <label for="sName" data-ru="Название">Name</label>
+    <input id="sName" placeholder="e.g. Condo, Yonge &amp; Eglinton" data-ru-ph="Например: Condo, Yonge &amp; Eglinton">
+    <label for="sAddr" data-ru="Адрес">Address</label>
+    <input id="sAddr" placeholder="Street, number, city" data-ru-ph="Улица, дом, город">
     <div class="row" style="margin-top:12px">
-      <button class="sec sm" id="sLoc" type="button">📍 По локации</button>
-      <button class="sm" id="sAdd" type="button">Добавить</button>
+      <button class="sec sm" id="sLoc" type="button" data-ru="📍 Я здесь">📍 I'm here</button>
+      <button class="sm" id="sAdd" type="button" data-ru="Добавить">Add</button>
     </div>
     <div id="sCoords" class="addr"></div>
   </div>
   <div class="card" id="siteList"></div>
-  <p class="addr">Когда вы ближе 300 м к объекту с координатами, приложение предложит начать смену на нём. Координаты берутся по кнопке «По локации», по адресу или кнопкой «Привязать к этому месту».</p>
+  <p class="addr" data-ru="Когда вы ближе 200 м к объекту с координатами, приложение предложит начать смену.">When you are within 200 m of a site with coordinates, the app will offer to start a shift.</p>
 </section>
 
 <section id="t-report">
-  <h2>Отчёт</h2>
+  <h2 data-ru="Отчёт">Report</h2>
   <div class="row">
-    <select id="period"><option value="week">Эта неделя</option><option value="lastweek">Прошлая неделя</option><option value="month">Этот месяц</option><option value="lastmonth">Прошлый месяц</option><option value="all">Всё время</option></select>
+    <select id="period"><option value="week" data-ru="Эта неделя">This week</option><option value="lastweek" data-ru="Прошлая неделя">Last week</option><option value="month" data-ru="Этот месяц">This month</option><option value="lastmonth" data-ru="Прошлый месяц">Last month</option><option value="all" data-ru="Всё время">All time</option></select>
   </div>
   <div class="row" style="margin-top:10px">
-    <div><label for="rate">Ставка $/час</label><input id="rate" type="number" inputmode="decimal" step="0.5" placeholder="0"></div>
-    <div><label for="otLim">Сверхурочные после, ч/нед</label><input id="otLim" type="number" inputmode="numeric" value="44"></div>
+    <div><label for="rate" data-ru="Ставка $/час">Rate $/hour</label><input id="rate" type="number" inputmode="decimal" step="0.5" placeholder="0"></div>
+    <div><label for="otLim" data-ru="Сверхурочные после, ч/нед">Overtime after, h/week</label><input id="otLim" type="number" inputmode="numeric" value="44"></div>
   </div>
   <div class="stats" style="margin-top:12px">
-    <div class="stat"><small>Часы</small><div id="rH" class="num">0</div></div>
-    <div class="stat"><small>Сверхурочные</small><div id="rOT" class="num">0</div></div>
-    <div class="stat"><small>Заработок</small><div id="rPay" class="num">$0</div></div>
+    <div class="stat"><small data-ru="Часы">Hours</small><div id="rH" class="num">0</div></div>
+    <div class="stat"><small data-ru="Сверхурочные">Overtime</small><div id="rOT" class="num">0</div></div>
+    <div class="stat"><small data-ru="Заработок">Earnings</small><div id="rPay" class="num">$0</div></div>
   </div>
   <div class="card" id="bySite"></div>
   <div class="row">
-    <button class="sec sm" id="csvBtn" type="button">⬇︎ CSV для Excel</button>
-    <button class="sec sm" id="txtBtn" type="button">⬇︎ Лог .txt</button>
+    <button class="sec sm" id="csvBtn" type="button" data-ru="⬇︎ CSV для Excel">⬇︎ CSV for Excel</button>
+    <button class="sec sm" id="txtBtn" type="button" data-ru="⬇︎ Лог .txt">⬇︎ Log .txt</button>
   </div>
-  <h2>Табель для шефа</h2>
-  <label for="who">Ваше имя в табеле</label><input id="who" placeholder="Sherkhan">
+  <h2 data-ru="Табель для шефа">Timesheet for the boss</h2>
+  <label for="who" data-ru="Ваше имя в табеле">Your name on the timesheet</label><input id="who" placeholder="Sherkhan">
   <div class="row seg" style="margin-top:10px">
-    <button class="sm" id="mSimple" type="button">Простой</button>
-    <button class="sec sm" id="mFull" type="button">Подробный</button>
+    <button class="sm" id="mSimple" type="button" data-ru="Простой">Simple</button>
+    <button class="sec sm" id="mFull" type="button" data-ru="Подробный">Detailed</button>
   </div>
   <pre id="logTxt"></pre>
   <div class="row" style="margin-top:10px">
-    <button class="sm" id="shareBtn" type="button">Поделиться</button>
-    <button class="sec sm" id="copyBtn" type="button">Копировать</button>
+    <button class="sm" id="shareBtn" type="button" data-ru="Поделиться">Share</button>
+    <button class="sec sm" id="copyBtn" type="button" data-ru="Копировать">Copy</button>
   </div>
   <div id="fullPhotos"></div>
-  <details class="card"><summary>Журнал событий</summary><pre id="evTxt"></pre></details>
-  <h2>Резервная копия</h2>
+  <details class="card"><summary data-ru="Журнал событий">Event log</summary><pre id="evTxt"></pre></details>
+  <h2 data-ru="Резервная копия">Backup</h2>
   <div class="row">
-    <button class="sec sm" id="bkBtn" type="button">Сохранить копию</button>
-    <label class="btn sec" style="margin:0;color:var(--ink);font-size:16px;min-height:44px">Восстановить<input id="bkIn" type="file" accept=".json,application/json" hidden></label>
+    <button class="sec sm" id="bkBtn" type="button" data-ru="Сохранить копию">Save backup</button>
+    <label class="btn sec" style="margin:0;color:var(--ink);font-size:16px;min-height:44px"><span data-ru="Восстановить">Restore</span><input id="bkIn" type="file" accept=".json,application/json" hidden></label>
   </div>
-  <p class="addr">Всё хранится только на этом телефоне. Раз в неделю сохраняйте копию (с фото) в Файлы — она понадобится, если удалить приложение или очистить данные Safari.</p>
+  <p class="addr" data-ru="Всё хранится только на этом телефоне. Раз в неделю сохраняйте копию (с фото) в Файлы — она понадобится, если удалить приложение или очистить данные Safari.">Everything is stored only on this phone. Once a week, save a backup (with photos) to Files — you will need it if you delete the app or clear Safari data.</p>
 </section>
-  <p class="addr" style="text-align:center;margin-top:28px">© 2026 Sherkhan. Все права защищены.</p>
+  <p class="addr" style="text-align:center;margin-top:28px" data-ru="© 2026 Sherkhan. Все права защищены.">© 2026 Sherkhan. All rights reserved.</p>
 </main>
 
 <nav>
-  <button data-t="shift" class="on" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg>Смена</button>
-  <button data-t="log" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg>Журнал</button>
-  <button data-t="sites" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>Объекты</button>
-  <button data-t="report" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Отчёт</button>
+  <button data-t="shift" class="on" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg><span data-ru="Смена">Shift</span></button>
+  <button data-t="log" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg><span data-ru="Журнал">Log</span></button>
+  <button data-t="sites" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span data-ru="Объекты">Sites</span></button>
+  <button data-t="report" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span data-ru="Отчёт">Report</span></button>
 </nav>
 <div id="toast" class="toast"></div>
 <dialog id="dlg"></dialog>
@@ -198,23 +199,34 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+/* --- язык: английский по умолчанию, русский по кнопке; выбор хранится на телефоне --- */
+const LK='smena.lang';let LANG='en';try{if(localStorage.getItem(LK)==='ru')LANG='ru'}catch(e){}
+const T=(en,ru)=>LANG==='ru'?ru:en;
+const LOC=()=>T('en-CA','ru-RU');
+const H=()=>T('h','ч');
+function applyLang(){
+  document.documentElement.lang=LANG;document.title=T('Shift — time tracking','Смена — учёт времени');
+  document.querySelectorAll('[data-ru]').forEach(e=>{if(e.dataset.en==null)e.dataset.en=e.textContent;e.textContent=LANG==='ru'?e.dataset.ru:e.dataset.en});
+  document.querySelectorAll('[data-ru-ph]').forEach(e=>{if(e.dataset.enPh==null)e.dataset.enPh=e.placeholder;e.placeholder=LANG==='ru'?e.dataset.ruPh:e.dataset.enPh});
+  const b=$('#langBtn');b.textContent=T('RU','EN');b.setAttribute('aria-label',T('Switch to Russian','Switch to English'));
+}
 const K='smena.v1';
 let D={sites:[],shifts:[],cur:null,log:[],rate:'',ot:44};
 try{Object.assign(D,JSON.parse(localStorage.getItem(K))||{})}catch(e){}
 let saveT=0;
-const save=()=>{D.upd=Date.now();const s=JSON.stringify(D);try{localStorage.setItem(K,s)}catch(e){}clearTimeout(saveT);saveT=setTimeout(()=>pPut('__state',s).catch(()=>toast('Не удалось сохранить на телефоне')),300)};
+const save=()=>{D.upd=Date.now();const s=JSON.stringify(D);try{localStorage.setItem(K,s)}catch(e){}clearTimeout(saveT);saveT=setTimeout(()=>pPut('__state',s).catch(()=>toast(T('Could not save on this phone','Не удалось сохранить на телефоне'))),300)};
 
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),2200)};
 const pad=n=>String(n).padStart(2,'0');
 const hms=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/3600)+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60)};
 const hrs=ms=>(ms/36e5).toFixed(2);
-const fT=t=>new Date(t).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-const fD=t=>new Date(t).toLocaleDateString('ru-RU',{weekday:'short',day:'numeric',month:'short'});
+const fT=t=>new Date(t).toLocaleTimeString(LOC(),{hour:T('numeric','2-digit'),minute:'2-digit'});
+const fD=t=>new Date(t).toLocaleDateString(LOC(),{weekday:'short',day:'numeric',month:'short'});
 const fDT=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
 const logEv=txt=>{D.log.push({t:Date.now(),txt});if(D.log.length>1500)D.log=D.log.slice(-1500)};
 const breakMs=s=>(s.breaks||[]).reduce((a,b)=>a+((b.e||Date.now())-b.s),0);
 const workMs=s=>((s.end||Date.now())-s.start)-breakMs(s);
-const siteName=id=>(D.sites.find(x=>x.id===id)||{}).name||'Без объекта';
+const siteName=id=>(D.sites.find(x=>x.id===id)||{}).name||T('No site','Без объекта');
 
 /* --- фото в IndexedDB --- */
 let dbp=null;
@@ -227,24 +239,24 @@ const shrink=file=>new Promise(async ok=>{let src;try{src=await toURL(file)}catc
 const toBlob=u=>{const [m,d]=u.split(',');const bin=atob(d);const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:(m.match(/:(.*?);/)||[])[1]||'image/jpeg'})};
 const pStat=t=>{const e=$('#pStat');if(e)e.textContent=t};
 const photoSrc=async id=>{id=String(id);if(id.startsWith('a:'))return (D.purl&&D.purl[id])||('/_blob/'+id.slice(2));let b;try{b=await pGet(id)}catch(e){return null}if(!b)return null;if(typeof b==='string')return b;try{return await toURL(b)}catch(e){return null}};
-const thumbs=async(owner,el,redraw)=>{redraw=redraw||(()=>thumbs(owner,el));el.innerHTML='';for(const id of [...(owner.photos||[])]){const src=await photoSrc(id);const t=document.createElement('button');t.type='button';t.className='ph';t.onclick=()=>openPhoto(src,owner,id,redraw);if(!src){t.textContent='фото не найдено — нажмите';el.appendChild(t);continue}const i=new Image();i.alt='Фото работы';i.onerror=()=>{t.textContent='не открылось — нажмите';t.onclick=()=>openPhoto(null,owner,id,redraw)};i.src=src;t.appendChild(i);el.appendChild(t)}};
-const addPhotos=async(owner,files,el,redraw)=>{let ok=0;for(const f of files){try{const b=await shrink(f);const id=uid();await pPut(id,b);owner.photos=owner.photos||[];owner.photos.push(id);ok++;logEv('Фото добавлено')}catch(err){pStat('Ошибка фото: '+(err&&err.message||err))}}
-  save();(redraw||(()=>thumbs(owner,el)))();if(ok){pStat('Последнее фото сохранено на телефоне');toast(ok>1?`Добавлено фото: ${ok}`:'Фото добавлено')}};
+const thumbs=async(owner,el,redraw)=>{redraw=redraw||(()=>thumbs(owner,el));el.innerHTML='';for(const id of [...(owner.photos||[])]){const src=await photoSrc(id);const t=document.createElement('button');t.type='button';t.className='ph';t.onclick=()=>openPhoto(src,owner,id,redraw);if(!src){t.textContent=T('photo not found — tap','фото не найдено — нажмите');el.appendChild(t);continue}const i=new Image();i.alt=T('Work photo','Фото работы');i.onerror=()=>{t.textContent=T('failed to open — tap','не открылось — нажмите');t.onclick=()=>openPhoto(null,owner,id,redraw)};i.src=src;t.appendChild(i);el.appendChild(t)}};
+const addPhotos=async(owner,files,el,redraw)=>{let ok=0;for(const f of files){try{const b=await shrink(f);const id=uid();await pPut(id,b);owner.photos=owner.photos||[];owner.photos.push(id);ok++;logEv(T('Photo added','Фото добавлено'))}catch(err){pStat(T('Photo error: ','Ошибка фото: ')+(err&&err.message||err))}}
+  save();(redraw||(()=>thumbs(owner,el)))();if(ok){pStat(T('Last photo saved on this phone','Последнее фото сохранено на телефоне'));toast(ok>1?T(`Photos added: ${ok}`,`Добавлено фото: ${ok}`):T('Photo added','Фото добавлено'))}};
 function openPhoto(src,owner,id,redraw){const d=$('#pdlg');d.className='sheet';
-  d.innerHTML='<div class="sh-h"><button class="link" id="pX" type="button" autofocus>Закрыть</button><b>Фото</b><span style="width:80px"></span></div><div class="sh-b">'+(src?'<div class="viewer"><img alt="Фото"></div>':'<h2 style="margin-top:0">Фото не найдено</h2><p>Файл этого фото не сохранился на телефоне. Удалите пустое место и, если нужно, снимите фото заново.</p>')+
-  '<div class="two" style="margin-top:14px">'+(src?'<button class="sec" id="pDl" type="button">Поделиться</button>':'<span></span>')+'<button class="rd" id="pDel" type="button">Удалить фото</button></div></div>';
+  d.innerHTML=`<div class="sh-h"><button class="link" id="pX" type="button" autofocus>${T('Close','Закрыть')}</button><b>${T('Photo','Фото')}</b><span style="width:80px"></span></div><div class="sh-b">`+(src?`<div class="viewer"><img alt="${T('Photo','Фото')}"></div>`:`<h2 style="margin-top:0">${T('Photo not found','Фото не найдено')}</h2><p>${T('This photo file was not saved on the phone. Delete the empty slot and retake the photo if needed.','Файл этого фото не сохранился на телефоне. Удалите пустое место и, если нужно, снимите фото заново.')}</p>`)+
+  '<div class="two" style="margin-top:14px">'+(src?`<button class="sec" id="pDl" type="button">${T('Share','Поделиться')}</button>`:'<span></span>')+`<button class="rd" id="pDel" type="button">${T('Delete photo','Удалить фото')}</button></div></div>`;
   if(src)d.querySelector('img').src=src;d.showModal();$('#pX').onclick=()=>d.close();
-  $('#pDel').onclick=()=>{const b=$('#pDel');if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Точно удалить?';return}
-    owner.photos=(owner.photos||[]).filter(x=>x!==id);pDel(id).catch(()=>{});logEv('Фото удалено');save();d.close();redraw&&redraw();renderLog();toast('Фото удалено')};
-  if(src)$('#pDl').onclick=async()=>{try{const b=src.startsWith('data:')?toBlob(src):await (await fetch(src)).blob();await shareFile(new File([b],'foto.jpg',{type:'image/jpeg'}),'Фото работы')}catch(e){toast('Не удалось открыть фото')}}}
+  $('#pDel').onclick=()=>{const b=$('#pDel');if(!b.dataset.sure){b.dataset.sure=1;b.textContent=T('Really delete?','Точно удалить?');return}
+    owner.photos=(owner.photos||[]).filter(x=>x!==id);pDel(id).catch(()=>{});logEv(T('Photo deleted','Фото удалено'));save();d.close();redraw&&redraw();renderLog();toast(T('Photo deleted','Фото удалено'))};
+  if(src)$('#pDl').onclick=async()=>{try{const b=src.startsWith('data:')?toBlob(src):await (await fetch(src)).blob();await shareFile(new File([b],'photo.jpg',{type:'image/jpeg'}),T('Work photo','Фото работы'))}catch(e){toast(T('Could not open photo','Не удалось открыть фото'))}}}
 
 /* --- локация --- */
-const getPos=()=>new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('нет геолокации'));navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),no,{enableHighAccuracy:true,timeout:15000,maximumAge:60000})});
+const getPos=()=>new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('no geolocation'));navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),no,{enableHighAccuracy:true,timeout:15000,maximumAge:60000})});
 const GKEY='AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo';let gP=null;
-const loadGoogle=()=>gP||(gP=new Promise((ok,no)=>{if(window.google?.maps)return ok(window.google.maps);const cb='_gmc'+Date.now();window[cb]=()=>{delete window[cb];ok(window.google.maps)};const s=document.createElement('script');s.src=`https://maps.googleapis.com/maps/api/js?key=${GKEY}&language=ru&callback=${cb}`;s.onerror=()=>{gP=null;s.remove();no(new Error('Карта не загрузилась — нужен интернет'))};document.head.appendChild(s)}));
+const loadGoogle=()=>gP||(gP=new Promise((ok,no)=>{if(window.google?.maps)return ok(window.google.maps);const cb='_gmc'+Date.now();window[cb]=()=>{delete window[cb];ok(window.google.maps)};const s=document.createElement('script');s.src=`https://maps.googleapis.com/maps/api/js?key=${GKEY}&language=${T('en','ru')}&callback=${cb}`;s.onerror=()=>{gP=null;s.remove();no(new Error(T('Map failed to load — internet needed','Карта не загрузилась — нужен интернет')))};document.head.appendChild(s)}));
 const gGeo=async req=>{const g=await loadGoogle();const res=await new g.Geocoder().geocode(req);return res?.results?.[0]||null};
 // Запасной геокодер (OpenStreetMap), если Google отказал (например, не подключена оплата)
-const osm=async(path,params)=>{const u=new URL('https://nominatim.openstreetmap.org/'+path);Object.entries({format:'jsonv2','accept-language':'ru',...params}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);if(!r.ok)throw new Error('OSM '+r.status);return r.json()};
+const osm=async(path,params)=>{const u=new URL('https://nominatim.openstreetmap.org/'+path);Object.entries({format:'jsonv2','accept-language':T('en','ru'),...params}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);if(!r.ok)throw new Error('OSM '+r.status);return r.json()};
 const osmAddr=a=>{if(!a)return '';const x=a.address||{};const street=[x.house_number,x.road].filter(Boolean).join(' ');const city=x.city||x.town||x.village||x.suburb||'';return [street,city].filter(Boolean).join(', ')||a.display_name||''};
 const geocode=async(lat,lon)=>{try{const r=await gGeo({location:{lat,lng:lon}});if(r?.formatted_address)return r.formatted_address}catch(e){console.warn('Geocoder:',e?.code||e?.message||e)}
   try{return osmAddr(await osm('reverse',{lat,lon,zoom:18}))}catch(e){return ''}};
@@ -274,20 +286,20 @@ function showNear(){
   lastNearState=state;
   if(nearCardDismissed)return;
   if(state.startsWith('start:')){
-    $('#nearTxt').textContent=`Вы рядом с «${nearSite.name}». Начать смену?`;
-    btns.innerHTML='<button id="nearGo" type="button" style="flex:1">▶ Начать смену</button>';
+    $('#nearTxt').textContent=T(`You are near “${nearSite.name}”. Start a shift?`,`Вы рядом с «${nearSite.name}». Начать смену?`);
+    btns.innerHTML=`<button id="nearGo" type="button" style="flex:1">${T('▶ Start shift','▶ Начать смену')}</button>`;
     $('#nearGo').onclick=()=>{$('#site').value=nearSite.id;startShift(nearSite.id);card.hidden=true};
   }else if(state.startsWith('pause:')){
     const site=D.sites.find(x=>x.id===c.siteId);const d=Math.round(dist(lastLoc,site));
-    $('#nearTxt').textContent=`Вы отошли от «${site.name}» на ${d} м.`;
-    btns.innerHTML='<button class="or" id="nearPause" type="button" style="flex:1">☕ Пауза</button><button class="sec sm" id="nearDis" type="button">Не сейчас</button>';
-    $('#nearPause').onclick=()=>{c.breaks.push({s:Date.now()});c.onBreak=true;logEv('Пауза (отошёл от объекта)');save();renderShift();card.hidden=true};
+    $('#nearTxt').textContent=T(`You are ${d} m away from “${site.name}”.`,`Вы отошли от «${site.name}» на ${d} м.`);
+    btns.innerHTML=`<button class="or" id="nearPause" type="button" style="flex:1">${T('☕ Pause','☕ Пауза')}</button><button class="sec sm" id="nearDis" type="button">${T('Not now','Не сейчас')}</button>`;
+    $('#nearPause').onclick=()=>{c.breaks.push({s:Date.now()});c.onBreak=true;logEv(T('Pause (left the site)','Пауза (отошёл от объекта)'));save();renderShift();card.hidden=true};
     $('#nearDis').onclick=()=>{nearCardDismissed=true;card.hidden=true};
   }else if(state.startsWith('resume:')){
     const site=D.sites.find(x=>x.id===c.siteId);
-    $('#nearTxt').textContent=`Вы вернулись на «${site.name}». Продолжить?`;
-    btns.innerHTML='<button id="nearRes" type="button" style="flex:1">▶ Продолжить</button><button class="sec sm" id="nearDis2" type="button">Не сейчас</button>';
-    $('#nearRes').onclick=()=>{c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv('Конец перерыва (вернулся на объект)');save();renderShift();card.hidden=true};
+    $('#nearTxt').textContent=T(`You are back at “${site.name}”. Resume?`,`Вы вернулись на «${site.name}». Продолжить?`);
+    btns.innerHTML=`<button id="nearRes" type="button" style="flex:1">${T('▶ Resume','▶ Продолжить')}</button><button class="sec sm" id="nearDis2" type="button">${T('Not now','Не сейчас')}</button>`;
+    $('#nearRes').onclick=()=>{c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv(T('Break ended (back at the site)','Конец перерыва (вернулся на объект)'));save();renderShift();card.hidden=true};
     $('#nearDis2').onclick=()=>{nearCardDismissed=true;card.hidden=true};
   }
   card.hidden=false;
@@ -297,32 +309,32 @@ const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(r){const l=r.g
 
 /* --- смена --- */
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
-const mapLink=(q,label)=>q?`<a class="map" href="${esc(mapUrl(q))}" target="_blank" rel="noopener">${label||'🗺 Открыть в Google Maps'}</a>`:'';
+const mapLink=(q,label)=>q?`<a class="map" href="${esc(mapUrl(q))}" target="_blank" rel="noopener">${label||T('🗺 Open in Google Maps','🗺 Открыть в Google Maps')}</a>`:'';
 const siteQuery=s=>s?(s.addr||s.name||''):'';
 function showSiteMap(){const s=D.sites.find(x=>x.id===$('#site').value);$('#siteMap').innerHTML=s?(s.addr?`📍 ${esc(s.addr)} `:'')+mapLink(siteQuery(s)):''}
 function renderSites(){
   const cur=$('#site').value;
-  $('#site').innerHTML='<option value="">— Без объекта —</option>'+D.sites.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+  $('#site').innerHTML=`<option value="">${T('— No site —','— Без объекта —')}</option>`+D.sites.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
   $('#site').value=D.cur?D.cur.siteId||'':cur;showSiteMap();
-  $('#siteList').innerHTML=D.sites.length?D.sites.map(s=>`<div class="item"><div data-site="${esc(s.id)}"><b>${esc(s.name)}</b><small>${esc(s.addr||'без адреса')}</small>${mapLink(siteQuery(s))}${s.lat==null?`<button class="pin" data-pin="${esc(s.id)}" type="button">${s.addr?'📍 Найти точку по адресу':'📍 Привязать к этому месту'}</button>`:''}</div><button class="sec sm" data-del="${esc(s.id)}" type="button">Удалить</button></div>`).join(''):'<div class="empty">Объектов пока нет</div>';
+  $('#siteList').innerHTML=D.sites.length?D.sites.map(s=>`<div class="item"><div data-site="${esc(s.id)}"><b>${esc(s.name)}</b><small>${esc(s.addr||T('no address','без адреса'))}</small>${mapLink(siteQuery(s))}${s.lat==null?`<button class="pin" data-pin="${esc(s.id)}" type="button">${s.addr?T('📍 Find point by address','📍 Найти точку по адресу'):T('📍 Pin to my location','📍 Привязать к этому месту')}</button>`:''}</div><button class="sec sm" data-del="${esc(s.id)}" type="button">${T('Delete','Удалить')}</button></div>`).join(''):`<div class="empty">${T('No sites yet','Объектов пока нет')}</div>`;
 }
 function renderShift(){
   const c=D.cur,ctr=$('#ctrls');
   $('#timer').className='timer'+(c?(c.onBreak?' pause':' run'):'');
   $('#shiftExtra').hidden=!c;
-  if(!c){ctr.innerHTML='<button id="bStart" type="button">▶ Начать смену</button>';$('#state').textContent='Смена не начата';$('#clock').textContent='0:00:00'}
+  if(!c){ctr.innerHTML=`<button id="bStart" type="button">${T('▶ Start shift','▶ Начать смену')}</button>`;$('#state').textContent=T('Shift not started','Смена не начата');$('#clock').textContent='0:00:00'}
   else{
-    ctr.innerHTML=(c.onBreak?'<button class="or" id="bBreak" type="button">▶ Продолжить</button>':'<button class="sec" id="bBreak" type="button">☕ Перерыв</button>')+'<button class="rd" id="bStop" type="button">■ Закончить</button>';
+    ctr.innerHTML=(c.onBreak?`<button class="or" id="bBreak" type="button">${T('▶ Resume','▶ Продолжить')}</button>`:`<button class="sec" id="bBreak" type="button">${T('☕ Break','☕ Перерыв')}</button>`)+`<button class="rd" id="bStop" type="button">${T('■ Finish','■ Закончить')}</button>`;
     $('#note').value=c.note||'';thumbs(c,$('#curPhotos'));
   }
   tick();
 }
-function tick(){const c=D.cur;if(!c)return;$('#clock').textContent=hms(workMs(c));$('#state').textContent=(c.onBreak?'Перерыв · ':'Работаю · ')+'с '+fT(c.start)+' · '+siteName(c.siteId)+(breakMs(c)?' · перерывы '+hms(breakMs(c)).slice(0,-3):'')}
+function tick(){const c=D.cur;if(!c)return;$('#clock').textContent=hms(workMs(c));$('#state').textContent=(c.onBreak?T('On break · ','Перерыв · '):T('Working · ','Работаю · '))+T('since ','с ')+fT(c.start)+' · '+siteName(c.siteId)+(breakMs(c)?T(' · breaks ',' · перерывы ')+hms(breakMs(c)).slice(0,-3):'')}
 setInterval(tick,1000);
 function startShift(siteId){const st=D.sites.find(x=>x.id===siteId);
   D.cur={id:uid(),start:Date.now(),siteId:siteId||'',address:st?.addr||'',breaks:[],photos:[],note:''};
-  logEv('НАЧАЛО смены — '+siteName(D.cur.siteId));save();renderSites();renderShift();showNear();toast('Смена начата');
-  locate().then(async l=>{if(!l)return;const a=await geocode(l.lat,l.lon)||`${l.lat.toFixed(5)}, ${l.lon.toFixed(5)}`;if(D.cur&&!D.cur.address){D.cur.address=a;save()}logEv('Место: '+a)})}
+  logEv(T('SHIFT START — ','НАЧАЛО смены — ')+siteName(D.cur.siteId));save();renderSites();renderShift();showNear();toast(T('Shift started','Смена начата'));
+  locate().then(async l=>{if(!l)return;const a=await geocode(l.lat,l.lon)||`${l.lat.toFixed(5)}, ${l.lon.toFixed(5)}`;if(D.cur&&!D.cur.address){D.cur.address=a;save()}logEv(T('Location: ','Место: ')+a)})}
 let geoWatchId=null;
 function startGeoWatch(){
   if(!navigator.geolocation||geoWatchId!==null)return;
@@ -334,68 +346,68 @@ function goTab(t){document.querySelector(`nav button[data-t="${t}"]`).click()}
 $('#ctrls').addEventListener('click',async e=>{
   const id=e.target.closest('button')?.id;
   if(id==='bStart')startShift($('#site').value);
-  if(id==='bBreak'){const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv('Конец перерыва')}else{c.breaks.push({s:Date.now()});c.onBreak=true;logEv('Перерыв')}save();renderShift();showNear()}
-  if(id==='bStop')confirmBox('Закончить смену?',`Отработано ${hms(workMs(D.cur))}`,()=>{
+  if(id==='bBreak'){const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();c.onBreak=false;logEv(T('Break ended','Конец перерыва'))}else{c.breaks.push({s:Date.now()});c.onBreak=true;logEv(T('Break','Перерыв'))}save();renderShift();showNear()}
+  if(id==='bStop')confirmBox(T('Finish the shift?','Закончить смену?'),T(`Worked ${hms(workMs(D.cur))}`,`Отработано ${hms(workMs(D.cur))}`),()=>{
     const c=D.cur;if(c.onBreak){c.breaks[c.breaks.length-1].e=Date.now();delete c.onBreak}
     c.end=Date.now();c.siteName=siteName(c.siteId);D.shifts.unshift(c);D.cur=null;
-    logEv(`КОНЕЦ смены — ${c.siteName}, ${hrs(workMs(c))} ч`+(c.note?` · ${c.note}`:''));save();renderShift();renderLog();renderReport();showNear();toast('Смена сохранена');
+    logEv(T('SHIFT END — ','КОНЕЦ смены — ')+`${c.siteName}, ${hrs(workMs(c))} ${H()}`+(c.note?` · ${c.note}`:''));save();renderShift();renderLog();renderReport();showNear();toast(T('Shift saved','Смена сохранена'));
   });
 });
-$('#site').onchange=()=>{showSiteMap();if(D.cur){D.cur.siteId=$('#site').value;logEv('Объект: '+siteName(D.cur.siteId));save();tick()}};
+$('#site').onchange=()=>{showSiteMap();if(D.cur){D.cur.siteId=$('#site').value;logEv(T('Site: ','Объект: ')+siteName(D.cur.siteId));save();tick()}};
 $('#note').oninput=()=>{if(D.cur){D.cur.note=$('#note').value;save()}};
 $('#photoIn').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(D.cur)await addPhotos(D.cur,fs,$('#curPhotos'))};
 
 /* --- диалоги --- */
-function confirmBox(title,text,yes){const d=$('#dlg');d.className='';d.innerHTML=`<h2 style="margin-top:0">${esc(title)}</h2><p>${esc(text)}</p><div class="row"><button class="sec" id="dNo" type="button">Отмена</button><button id="dYes" type="button">Да</button></div>`;d.showModal();$('#dNo').onclick=()=>d.close();$('#dYes').onclick=()=>{d.close();yes()}}
+function confirmBox(title,text,yes){const d=$('#dlg');d.className='';d.innerHTML=`<h2 style="margin-top:0">${esc(title)}</h2><p>${esc(text)}</p><div class="row"><button class="sec" id="dNo" type="button">${T('Cancel','Отмена')}</button><button id="dYes" type="button">${T('Yes','Да')}</button></div>`;d.showModal();$('#dNo').onclick=()=>d.close();$('#dYes').onclick=()=>{d.close();yes()}}
 const toLocal=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
 const dOnly=t=>{const d=new Date(t);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const tOnly=t=>{const d=new Date(t);return pad(d.getHours())+':'+pad(d.getMinutes())};
 function editShift(id){
   const s=D.shifts.find(x=>x.id===id);if(!s)return;const d=$('#dlg');d.className='sheet';
-  d.innerHTML=`<div class="sh-h"><button class="link" id="eX" type="button" autofocus>Отмена</button><b>Смена</b><button class="link y" id="eOk" type="button">Сохранить</button></div>
+  d.innerHTML=`<div class="sh-h"><button class="link" id="eX" type="button" autofocus>${T('Cancel','Отмена')}</button><b>${T('Shift','Смена')}</b><button class="link y" id="eOk" type="button">${T('Save','Сохранить')}</button></div>
   <div class="sh-b">
-  <label for="eD">Дата</label><input id="eD" type="date" value="${dOnly(s.start)}">
-  <div class="two"><div><label for="eS">Начало</label><input id="eS" type="time" value="${tOnly(s.start)}"></div>
-  <div><label for="eE">Конец</label><input id="eE" type="time" value="${tOnly(s.end)}"></div></div>
-  <div class="two"><div><label for="eB">Перерыв, мин</label><input id="eB" type="number" inputmode="numeric" value="${Math.round(breakMs(s)/6e4)}"></div>
-  <div><label>Итого</label><div id="eTot" class="tot"></div></div></div>
-  <label for="eSite">Объект</label><select id="eSite"><option value="">— Без объекта —</option>${D.sites.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select>
+  <label for="eD">${T('Date','Дата')}</label><input id="eD" type="date" value="${dOnly(s.start)}">
+  <div class="two"><div><label for="eS">${T('Start','Начало')}</label><input id="eS" type="time" value="${tOnly(s.start)}"></div>
+  <div><label for="eE">${T('End','Конец')}</label><input id="eE" type="time" value="${tOnly(s.end)}"></div></div>
+  <div class="two"><div><label for="eB">${T('Break, min','Перерыв, мин')}</label><input id="eB" type="number" inputmode="numeric" value="${Math.round(breakMs(s)/6e4)}"></div>
+  <div><label>${T('Total','Итого')}</label><div id="eTot" class="tot"></div></div></div>
+  <label for="eSite">${T('Site','Объект')}</label><select id="eSite"><option value="">${T('— No site —','— Без объекта —')}</option>${D.sites.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select>
   <div class="addr" id="eMap"></div>
-  <label for="eN">Заметка</label><textarea id="eN">${esc(s.note)}</textarea>
-  <label>Фото</label><div id="eP" class="thumbs"></div>
-  <label class="btn sec" style="margin:10px 0 0;color:var(--ink);font-size:16px;min-height:48px;width:100%">📷 Добавить фото<input id="eAdd" type="file" accept="image/*" multiple hidden></label>
-  <button class="rd" id="eDel" type="button" style="width:100%;margin-top:28px">Удалить смену</button>
+  <label for="eN">${T('Note','Заметка')}</label><textarea id="eN">${esc(s.note)}</textarea>
+  <label>${T('Photos','Фото')}</label><div id="eP" class="thumbs"></div>
+  <label class="btn sec" style="margin:10px 0 0;color:var(--ink);font-size:16px;min-height:48px;width:100%">${T('📷 Add photo','📷 Добавить фото')}<input id="eAdd" type="file" accept="image/*" multiple hidden></label>
+  <button class="rd" id="eDel" type="button" style="width:100%;margin-top:28px">${T('Delete shift','Удалить смену')}</button>
   </div>`;
   $('#eSite').value=s.siteId||'';const eMap=()=>{const x=D.sites.find(y=>y.id===$('#eSite').value);const q=s.address||siteQuery(x);$('#eMap').innerHTML=q?`📍 ${esc(s.address||x.addr||'')} ${mapLink(q)}`:''};eMap();$('#eSite').addEventListener('change',eMap);thumbs(s,$('#eP'));
   const calc=()=>{const day=$('#eD').value,a=$('#eS').value,b=$('#eE').value;if(!day||!a||!b)return null;let st=new Date(day+'T'+a).getTime(),en=new Date(day+'T'+b).getTime();if(en<st)en+=864e5;const bm=Math.max(0,+$('#eB').value||0)*6e4;return{st,en,bm,w:en-st-bm}};
-  const upd=()=>{const c=calc();$('#eTot').textContent=c?hrs(Math.max(0,c.w))+' ч':'—'};upd();
+  const upd=()=>{const c=calc();$('#eTot').textContent=c?hrs(Math.max(0,c.w))+' '+H():'—'};upd();
   ['eD','eS','eE','eB'].forEach(k=>$('#'+k).addEventListener('input',upd));
   d.showModal();d.scrollTop=0;
   $('#eAdd').onchange=async ev=>{const fs=[...ev.target.files];ev.target.value='';await addPhotos(s,fs,$('#eP'));renderLog()};
   $('#eX').onclick=()=>d.close();
-  $('#eOk').onclick=()=>{const c=calc();if(!c)return toast('Заполните дату и время');if(c.w<0)return toast('Перерыв больше смены');
+  $('#eOk').onclick=()=>{const c=calc();if(!c)return toast(T('Fill in date and time','Заполните дату и время'));if(c.w<0)return toast(T('Break is longer than the shift','Перерыв больше смены'));
     s.start=c.st;s.end=c.en;s.breaks=c.bm?[{s:c.st,e:c.st+c.bm}]:[];s.siteId=$('#eSite').value;s.siteName=siteName(s.siteId);s.note=$('#eN').value;
-    logEv(`Изменена смена ${fD(c.st)} — ${hrs(workMs(s))} ч`);save();d.close();renderLog();renderReport();toast('Сохранено')};
-  $('#eDel').onclick=()=>{const b=$('#eDel');if(!b.dataset.sure){b.dataset.sure=1;b.textContent='Точно удалить смену?';return}
-    (s.photos||[]).forEach(x=>pDel(x).catch(()=>{}));D.shifts=D.shifts.filter(x=>x.id!==id);logEv('Удалена смена '+fD(s.start));save();d.close();renderLog();renderReport();toast('Смена удалена')};
+    logEv(T(`Shift edited ${fD(c.st)} — ${hrs(workMs(s))} h`,`Изменена смена ${fD(c.st)} — ${hrs(workMs(s))} ч`));save();d.close();renderLog();renderReport();toast(T('Saved','Сохранено'))};
+  $('#eDel').onclick=()=>{const b=$('#eDel');if(!b.dataset.sure){b.dataset.sure=1;b.textContent=T('Really delete the shift?','Точно удалить смену?');return}
+    (s.photos||[]).forEach(x=>pDel(x).catch(()=>{}));D.shifts=D.shifts.filter(x=>x.id!==id);logEv(T('Shift deleted ','Удалена смена ')+fD(s.start));save();d.close();renderLog();renderReport();toast(T('Shift deleted','Смена удалена'))};
 }
 
 /* --- журнал --- */
 function renderLog(){
-  if(!D.shifts.length){$('#logList').innerHTML='<div class="empty">Здесь появятся завершённые смены</div>';return}
+  if(!D.shifts.length){$('#logList').innerHTML=`<div class="empty">${T('Finished shifts will appear here','Здесь появятся завершённые смены')}</div>`;return}
   const g={};D.shifts.forEach(s=>{const k=new Date(s.start).toDateString();(g[k]=g[k]||[]).push(s)});
-  $('#logList').innerHTML=Object.values(g).map(arr=>`<div class="card"><b>${esc(fD(arr[0].start))}</b>${arr.map(s=>`<div class="item" data-ed="${esc(s.id)}" role="button" tabindex="0"><div><b>${esc(s.siteName||siteName(s.siteId))}</b><small>${fT(s.start)}–${fT(s.end)}${breakMs(s)?' · перерыв '+Math.round(breakMs(s)/6e4)+' мин':''}${s.photos?.length?' · 📷 '+s.photos.length:''}</small>${s.note?`<small>${esc(s.note)}</small>`:''}</div><div class="num">${hrs(workMs(s))} ч</div></div>`).join('')}</div>`).join('');
+  $('#logList').innerHTML=Object.values(g).map(arr=>`<div class="card"><b>${esc(fD(arr[0].start))}</b>${arr.map(s=>`<div class="item" data-ed="${esc(s.id)}" role="button" tabindex="0"><div><b>${esc(s.siteName||siteName(s.siteId))}</b><small>${fT(s.start)}–${fT(s.end)}${breakMs(s)?T(' · break ',' · перерыв ')+Math.round(breakMs(s)/6e4)+T(' min',' мин'):''}${s.photos?.length?' · 📷 '+s.photos.length:''}</small>${s.note?`<small>${esc(s.note)}</small>`:''}</div><div class="num">${hrs(workMs(s))} ${H()}</div></div>`).join('')}</div>`).join('');
 }
 $('#logList').addEventListener('click',e=>{const it=e.target.closest('[data-ed]');if(it)editShift(it.dataset.ed)});
 
 /* --- объекты --- */
 let sPos=null;
-$('#sAddr').addEventListener('input',()=>{if(sPos){sPos=null;$('#sCoords').textContent='Адрес изменён — координаты возьму по адресу'}});
-$('#sLoc').onclick=async()=>{$('#sCoords').textContent='Определяю…';try{const p=await getPos();sPos=p;const a=await geocode(p.lat,p.lon);$('#sAddr').value=a;$('#sCoords').textContent=`Координаты сохранены (точность ~${Math.round(p.acc)} м)`}catch(e){$('#sCoords').textContent='Геолокация недоступна — впишите адрес вручную'}};
-$('#sAdd').onclick=async()=>{const n=$('#sName').value.trim();if(!n)return toast('Введите название');const ad=$('#sAddr').value.trim();let pos=sPos;if(!pos&&ad){$('#sCoords').textContent='Ищу адрес на карте…';pos=await fwdGeocode(ad)}D.sites.push({id:uid(),name:n,addr:ad,lat:pos?.lat,lon:pos?.lon});if(!pos)setTimeout(()=>toast('Координаты не найдены — нажмите «Привязать к этому месту»'),2300);logEv('Новый объект: '+n);sPos=null;$('#sName').value=$('#sAddr').value='';$('#sCoords').textContent='';save();renderSites();toast('Объект добавлен')};
-$('#siteList').addEventListener('click',async e=>{const pn=e.target.closest('[data-pin]');if(pn){const s=D.sites.find(x=>x.id===pn.dataset.pin);if(!s)return;pn.textContent='Определяю…';
-if(s.addr){const a=await fwdGeocode(s.addr);if(a){s.lat=a.lat;s.lon=a.lon;save();renderSites();toast('Точка взята по адресу объекта')}else{toast('Адрес не найден — укажите точку через «Изменить / на карте»');renderSites()}return}
-try{const p=await getPos();s.lat=p.lat;s.lon=p.lon;s.addr=await geocode(p.lat,p.lon);save();renderSites();toast('Объект привязан к этому месту')}catch(err){toast('Не удалось определить место');renderSites()}return}const id=e.target.dataset.del;if(id)confirmBox('Удалить объект?',siteName(id),()=>{D.sites=D.sites.filter(s=>s.id!==id);save();renderSites()})});
+$('#sAddr').addEventListener('input',()=>{if(sPos){sPos=null;$('#sCoords').textContent=T('Address changed — coordinates will be taken from the address','Адрес изменён — координаты возьму по адресу')}});
+$('#sLoc').onclick=async()=>{$('#sCoords').textContent=T('Locating…','Определяю…');try{const p=await getPos();sPos=p;const a=await geocode(p.lat,p.lon);$('#sAddr').value=a;$('#sCoords').textContent=T(`Coordinates saved (accuracy ~${Math.round(p.acc)} m)`,`Координаты сохранены (точность ~${Math.round(p.acc)} м)`)}catch(e){$('#sCoords').textContent=T('Location unavailable — type the address','Геолокация недоступна — впишите адрес вручную')}};
+$('#sAdd').onclick=async()=>{const n=$('#sName').value.trim();if(!n)return toast(T('Enter a name','Введите название'));const ad=$('#sAddr').value.trim();let pos=sPos;if(!pos&&ad){$('#sCoords').textContent=T('Looking up the address…','Ищу адрес на карте…');pos=await fwdGeocode(ad)}D.sites.push({id:uid(),name:n,addr:ad,lat:pos?.lat,lon:pos?.lon});if(!pos)setTimeout(()=>toast(T('Coordinates not found — set the point via “Edit / on map”','Координаты не найдены — укажите точку через «Изменить / на карте»')),2300);logEv(T('New site: ','Новый объект: ')+n);sPos=null;$('#sName').value=$('#sAddr').value='';$('#sCoords').textContent='';save();renderSites();toast(T('Site added','Объект добавлен'))};
+$('#siteList').addEventListener('click',async e=>{const pn=e.target.closest('[data-pin]');if(pn){const s=D.sites.find(x=>x.id===pn.dataset.pin);if(!s)return;pn.textContent=T('Locating…','Определяю…');
+if(s.addr){const a=await fwdGeocode(s.addr);if(a){s.lat=a.lat;s.lon=a.lon;save();renderSites();toast(T('Point taken from the site address','Точка взята по адресу объекта'))}else{toast(T('Address not found — set the point via “Edit / on map”','Адрес не найден — укажите точку через «Изменить / на карте»'));renderSites()}return}
+try{const p=await getPos();s.lat=p.lat;s.lon=p.lon;s.addr=await geocode(p.lat,p.lon);save();renderSites();toast(T('Site pinned to your location','Объект привязан к этому месту'))}catch(err){toast(T('Could not get your location','Не удалось определить место'));renderSites()}return}const id=e.target.dataset.del;if(id)confirmBox(T('Delete the site?','Удалить объект?'),siteName(id),()=>{D.sites=D.sites.filter(s=>s.id!==id);save();renderSites()})});
 
 /* --- отчёт --- */
 const monday=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
@@ -415,35 +427,35 @@ function renderReport(){
   $('#rH').textContent=hrs(tot);$('#rOT').textContent=hrs(ot);$('#rPay').textContent=rate?money((tot-ot)/36e5*rate+ot/36e5*rate*1.5):'—';
   const by={};list.forEach(s=>{const n=s.siteName||siteName(s.siteId);by[n]=(by[n]||0)+workMs(s)});
   const mx=Math.max(1,...Object.values(by));
-  $('#bySite').innerHTML=Object.keys(by).length?'<b>По объектам</b>'+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="item" style="display:block"><div class="row"><span>${esc(n)}</span><span class="num" style="font-size:20px;flex:none">${hrs(v)} ч</span></div><div class="bar"><i style="width:${v/mx*100}%"></i></div></div>`).join(''):'<div class="empty">Нет смен за этот период</div>';
+  $('#bySite').innerHTML=Object.keys(by).length?`<b>${T('By site','По объектам')}</b>`+Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([n,v])=>`<div class="item" style="display:block"><div class="row"><span>${esc(n)}</span><span class="num" style="font-size:20px;flex:none">${hrs(v)} ${H()}</span></div><div class="bar"><i style="width:${v/mx*100}%"></i></div></div>`).join(''):`<div class="empty">${T('No shifts in this period','Нет смен за этот период')}</div>`;
   $('#logTxt').textContent=logText();$('#evTxt').textContent=evText();if(document.activeElement!==$('#who'))$('#who').value=D.who||'';renderFullPhotos();
 }
 let mode='simple';
 function logText(){
   const list=inRange(),who=D.who?` — ${D.who}`:'',per=$('#period').selectedOptions[0].text.toLowerCase();
   const days={};list.forEach(s=>{const k=new Date(s.start).toDateString();(days[k]=days[k]||[]).push(s)});
-  const L=[`Табель${who}, ${per}`,''];
+  const L=[`${T('Timesheet','Табель')}${who}, ${per}`,''];
   for(const arr of Object.values(days)){
     const ms=arr.reduce((a,s)=>a+workMs(s),0);
-    if(mode==='simple'){L.push(`${fD(arr[0].start)} — ${hrs(ms)} ч`);continue}
-    L.push(`${fD(arr[0].start)} — ${hrs(ms)} ч`);
+    if(mode==='simple'){L.push(`${fD(arr[0].start)} — ${hrs(ms)} ${H()}`);continue}
+    L.push(`${fD(arr[0].start)} — ${hrs(ms)} ${H()}`);
     arr.forEach(s=>{const site=D.sites.find(x=>x.id===s.siteId);const addr=s.address||site?.addr||'';
-      L.push(`  ${fT(s.start)}–${fT(s.end)}, ${hrs(workMs(s))} ч${breakMs(s)?`, перерыв ${Math.round(breakMs(s)/6e4)} мин`:''}`);
-      L.push(`  Объект: ${s.siteName||siteName(s.siteId)}`);
-      if(addr)L.push(`  Адрес: ${addr}`);{const q=addr||site?.name;if(q&&site)L.push(`  Карта: ${mapUrl(q)}`);else if(addr)L.push(`  Карта: ${mapUrl(addr)}`)}
-      if(s.note)L.push(`  Комментарий: ${s.note}`);
-      if(s.photos?.length)L.push(`  Фото: ${s.photos.length} шт. (пришлю по запросу)`);
+      L.push(`  ${fT(s.start)}–${fT(s.end)}, ${hrs(workMs(s))} ${H()}${breakMs(s)?T(`, break ${Math.round(breakMs(s)/6e4)} min`,`, перерыв ${Math.round(breakMs(s)/6e4)} мин`):''}`);
+      L.push(`  ${T('Site','Объект')}: ${s.siteName||siteName(s.siteId)}`);
+      if(addr)L.push(`  ${T('Address','Адрес')}: ${addr}`);{const q=addr||site?.name;if(q&&site)L.push(`  ${T('Map','Карта')}: ${mapUrl(q)}`);else if(addr)L.push(`  ${T('Map','Карта')}: ${mapUrl(addr)}`)}
+      if(s.note)L.push(`  ${T('Comment','Комментарий')}: ${s.note}`);
+      if(s.photos?.length)L.push(T(`  Photos: ${s.photos.length} (available on request)`,`  Фото: ${s.photos.length} шт. (пришлю по запросу)`));
     });
     L.push('');
   }
-  if(!list.length)L.push('Нет смен за этот период');
-  L.push('',`Итого: ${$('#rH').textContent} ч`+(+$('#rOT').textContent?` (сверхурочные ${$('#rOT').textContent} ч)`:''));
+  if(!list.length)L.push(T('No shifts in this period','Нет смен за этот период'));
+  L.push('',`${T('Total','Итого')}: ${$('#rH').textContent} ${H()}`+(+$('#rOT').textContent?T(` (overtime ${$('#rOT').textContent} h)`,` (сверхурочные ${$('#rOT').textContent} ч)`):''));
   return L.join('\n').replace(/\n{3,}/g,'\n\n');
 }
-function evText(){const[a,b]=range();return D.log.filter(l=>l.t>=a&&l.t<b).map(l=>fDT(l.t)+'  '+l.txt).join('\n')||'Событий нет'}
+function evText(){const[a,b]=range();return D.log.filter(l=>l.t>=a&&l.t<b).map(l=>fDT(l.t)+'  '+l.txt).join('\n')||T('No events','Событий нет')}
 async function renderFullPhotos(){const box=$('#fullPhotos');box.innerHTML='';if(mode!=='full')return;
   const withP=inRange().filter(s=>s.photos?.length);if(!withP.length)return;
-  box.innerHTML='<h2>Фото к сменам</h2><p class="addr">Нажмите на фото, чтобы открыть и скачать — так его можно отправить шефу.</p>';
+  box.innerHTML=`<h2>${T('Shift photos','Фото к сменам')}</h2><p class="addr">${T('Tap a photo to open and download it — that way you can send it to your boss.','Нажмите на фото, чтобы открыть и скачать — так его можно отправить шефу.')}</p>`;
   for(const s of withP){const c=document.createElement('div');c.className='card';c.innerHTML=`<b>${esc(fD(s.start))} · ${esc(s.siteName||siteName(s.siteId))}</b><div class="thumbs"></div>`;box.appendChild(c);thumbs(s,c.querySelector('.thumbs'),()=>renderReport())}}
 function setMode(m){mode=m;$('#mSimple').className=m==='simple'?'sm':'sec sm';$('#mFull').className=m==='full'?'sm':'sec sm';renderReport()}
 $('#mSimple').onclick=()=>setMode('simple');$('#mFull').onclick=()=>setMode('full');
@@ -452,30 +464,33 @@ $('#period').onchange=renderReport;
 $('#rate').oninput=()=>{D.rate=$('#rate').value;save();renderReport()};
 $('#otLim').oninput=()=>{D.ot=$('#otLim').value;save();renderReport()};
 const csvCell=v=>{v=String(v??'');return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
-async function download(name,text,type){const f=new File(['\ufeff'+text],name,{type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(e.name!=='AbortError')toast('Не удалось сохранить')}return}const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
-async function shareFile(f,title){try{await navigator.share({files:[f],title})}catch(e){if(e.name!=='AbortError')toast('Не удалось поделиться')}}
-$('#csvBtn').onclick=()=>{const rows=[['Дата','Начало','Конец','Перерыв мин','Часы','Объект','Адрес','Заметка','Фото']];inRange().forEach(s=>rows.push([new Date(s.start).toLocaleDateString('en-CA'),fT(s.start),fT(s.end),Math.round(breakMs(s)/6e4),hrs(workMs(s)),s.siteName||siteName(s.siteId),s.address||'',s.note||'',(s.photos||[]).length]));download('tabel.csv',rows.map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv')};
+async function download(name,text,type){const f=new File(['\ufeff'+text],name,{type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(e.name!=='AbortError')toast(T('Could not save','Не удалось сохранить'))}return}const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+async function shareFile(f,title){try{await navigator.share({files:[f],title})}catch(e){if(e.name!=='AbortError')toast(T('Could not share','Не удалось поделиться'))}}
+$('#csvBtn').onclick=()=>{const rows=[LANG==='ru'?['Дата','Начало','Конец','Перерыв мин','Часы','Объект','Адрес','Заметка','Фото']:['Date','Start','End','Break min','Hours','Site','Address','Note','Photos']];inRange().forEach(s=>rows.push([new Date(s.start).toLocaleDateString('en-CA'),fT(s.start),fT(s.end),Math.round(breakMs(s)/6e4),hrs(workMs(s)),s.siteName||siteName(s.siteId),s.address||'',s.note||'',(s.photos||[]).length]));download('tabel.csv',rows.map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv')};
 $('#txtBtn').onclick=()=>download('smena-log.txt',logText(),'text/plain');
-const copy=async t=>{try{await navigator.clipboard.writeText(t);toast('Скопировано')}catch(e){toast('Не удалось скопировать')}};
+const copy=async t=>{try{await navigator.clipboard.writeText(t);toast(T('Copied','Скопировано'))}catch(e){toast(T('Could not copy','Не удалось скопировать'))}};
 $('#copyBtn').onclick=()=>copy(logText());
 $('#shareBtn').onclick=async()=>{const t=logText();if(navigator.share){try{await navigator.share({text:t})}catch(e){}}else copy(t)};
 const packAll=async()=>{const ph={};for(const s of [...D.shifts,...(D.cur?[D.cur]:[])])for(const id of s.photos||[]){const v=await photoSrc(id);if(v&&v.startsWith('data:'))ph[id]=v}return JSON.stringify({smena:1,...D,photosData:ph})};
 $('#bkBtn').onclick=async()=>download(`smena-backup-${new Date().toLocaleDateString('en-CA')}.json`,await packAll(),'application/json');
-function restoreFrom(text){let j;try{j=JSON.parse(String(text).trim().replace(/^\ufeff/,''));if(!Array.isArray(j.shifts))throw 0}catch(e){toast('Данные не подходят');return}
-  confirmBox('Загрузить данные?',`Смен: ${j.shifts.length}, объектов: ${(j.sites||[]).length}. Текущие записи на этом устройстве будут заменены.`,async()=>{
+function restoreFrom(text){let j;try{j=JSON.parse(String(text).trim().replace(/^\ufeff/,''));if(!Array.isArray(j.shifts))throw 0}catch(e){toast(T('This file is not a backup','Данные не подходят'));return}
+  confirmBox(T('Load data?','Загрузить данные?'),T(`Shifts: ${j.shifts.length}, sites: ${(j.sites||[]).length}. Current records on this device will be replaced.`,`Смен: ${j.shifts.length}, объектов: ${(j.sites||[]).length}. Текущие записи на этом устройстве будут заменены.`),async()=>{
     const ph=j.photosData||{};delete j.photosData;delete j.smena;D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},j);D.upd=Date.now();
-    for(const [k,v] of Object.entries(ph))await pPut(k,v);save();renderAll();toast('Данные загружены')})}
+    for(const [k,v] of Object.entries(ph))await pPut(k,v);save();renderAll();toast(T('Data loaded','Данные загружены'))})}
 $('#bkIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)restoreFrom(await f.text())};
 
 /* --- вкладки --- */
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate();scrollTo(0,0)});
 function renderAll(){renderSites();renderShift();renderLog();renderReport()}
+$('#langBtn').onclick=()=>{LANG=LANG==='ru'?'en':'ru';try{localStorage.setItem(LK,LANG)}catch(e){}
+  applyLang();renderAll();lastNearState='';showNear();document.dispatchEvent(new Event('langchange'))};
+applyLang();
 renderAll();
 try{navigator.storage?.persist?.()}catch(e){}
 (async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}locate();startGeoWatch()})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){locate();startGeoWatch()}});
-window.SM={get D(){return D},save,renderSites,geocode,fwdGeocode,loadGoogle,getPos,dist,toast,esc,setPending:p=>{sPos=p}};
+window.SM={get D(){return D},T,save,renderSites,geocode,fwdGeocode,loadGoogle,getPos,dist,toast,esc,setPending:p=>{sPos=p}};
 }
 </script>
 <script src="map.js"></script>
