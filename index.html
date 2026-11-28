@@ -64,6 +64,14 @@ textarea{min-height:80px;resize:vertical}
 .num{font-size:26px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .stats.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.stepper{flex-wrap:nowrap}.stepper button{flex:none;width:56px;font-size:24px}.stepper input{text-align:center;font-size:20px}
+.wxrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.wxrow:first-child{border-top:0}
+.wxrow small{color:var(--mute);display:block}.wxrow .num{font-size:30px}
+.tbl{overflow-x:auto;margin-top:8px}
+.tbl table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:15px}
+.tbl th{color:var(--mute);font-weight:600;font-size:13px;text-align:right;padding:4px 6px}.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl td{text-align:right;padding:6px;border-top:1px solid var(--line);white-space:nowrap}
+.arr{display:inline-block;width:1em;text-align:center}
 label.chk{display:flex;align-items:center;gap:10px;min-height:44px;margin:8px 0 0;color:var(--ink);font-size:16px;cursor:pointer}
 label.chk input{width:22px;height:22px;min-height:0;padding:0;margin:0;flex:none;accent-color:var(--y)}
 .stat{background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--line)}
@@ -71,7 +79,7 @@ label.chk input{width:22px;height:22px;min-height:0;padding:0;margin:0;flex:none
 .bar{height:10px;border-radius:5px;background:#16181a;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--y)}
 details summary{cursor:pointer;font-weight:600;min-height:28px}
 pre{white-space:pre-wrap;font:13px/1.5 ui-monospace,Menlo,monospace;background:#16181a;border-radius:10px;padding:12px;max-height:320px;overflow:auto;margin:10px 0 0}
-nav{flex:none;background:#141618;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+nav{flex:none;background:#141618;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
 nav button{background:none;color:var(--mute);flex-direction:column;gap:2px;font-size:13px;min-height:56px}
 nav button svg{width:24px;height:24px}
 nav button.on{color:var(--y)}
@@ -156,6 +164,24 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
   <p class="addr" data-ru="Когда вы ближе 200 м к объекту с координатами, приложение предложит начать смену.">When you are within 200 m of a site with coordinates, the app will offer to start a shift.</p>
 </section>
 
+<section id="t-wx">
+  <h2 data-ru="Погода">Weather</h2>
+  <div class="card">
+    <label for="wxSite" data-ru="Объект">Site</label>
+    <select id="wxSite"></select>
+    <label for="wxFloor" data-ru="Этаж">Floor</label>
+    <div class="row stepper">
+      <button class="sec" id="wxMinus" type="button" aria-label="−1">−</button>
+      <input id="wxFloor" type="number" inputmode="numeric" min="1" max="100" value="1">
+      <button class="sec" id="wxPlus" type="button" aria-label="+1">+</button>
+    </div>
+    <div id="wxH" class="addr"></div>
+  </div>
+  <div class="card" id="wxNow"><div class="empty" data-ru="Загружаю прогноз…">Loading forecast…</div></div>
+  <div class="card" id="wxHours" hidden></div>
+  <p class="addr" id="wxMeta"></p>
+</section>
+
 <section id="t-report">
   <h2 data-ru="Отчёт">Report</h2>
   <div class="row">
@@ -208,6 +234,7 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
   <button data-t="shift" class="on" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/></svg><span data-ru="Смена">Shift</span></button>
   <button data-t="log" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h14v16H5zM9 9h6M9 13h6M9 17h3"/></svg><span data-ru="Журнал">Log</span></button>
   <button data-t="sites" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><span data-ru="Объекты">Sites</span></button>
+  <button data-t="wx" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7"/></svg><span data-ru="Погода">Weather</span></button>
   <button data-t="report" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span data-ru="Отчёт">Report</span></button>
 </nav>
 <div id="toast" class="toast"></div>
@@ -524,8 +551,65 @@ function restoreFrom(text){let j;try{j=JSON.parse(String(text).trim().replace(/^
     for(const [k,v] of Object.entries(ph))await pPut(k,v);save();renderAll();toast(T('Data loaded','Данные загружены'))})}
 $('#bkIn').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(f)restoreFrom(await f.text())};
 
+/* --- погода (Open-Meteo, без ключа). В объекты ничего не пишем; выбор объекта/этажа — отдельно в smena.wx --- */
+const WXK='smena.wx',FLOOR_M=3,LV=[10,80,120,180];
+let wxPref={site:'',floor:1};try{Object.assign(wxPref,JSON.parse(localStorage.getItem(WXK))||{})}catch(e){}
+const wxSave=()=>{try{localStorage.setItem(WXK,JSON.stringify(wxPref))}catch(e){}};
+let wx=null,wxKey='',wxAt=0,wxReq=0;
+const wxCodeTxt=c=>c==null?'':c===0?T('Clear','Ясно'):c<=3?T('Cloudy','Облачно'):c<=48?T('Fog','Туман'):c<=57?T('Drizzle','Морось'):c<=67?T('Rain','Дождь'):c<=77?T('Snow','Снег'):c<=82?T('Showers','Ливень'):c<=86?T('Snow showers','Снегопад'):T('Thunderstorm','Гроза');
+const compass=d=>(LANG==='ru'?['С','СВ','В','ЮВ','Ю','ЮЗ','З','СЗ']:['N','NE','E','SE','S','SW','W','NW'])[Math.round(d/45)%8];
+const arrow=d=>`<span class="arr" style="transform:rotate(${Math.round(d)}deg)" aria-hidden="true">↓</span>`;
+// скорость на высоте h: между ближайшими уровнями прогноза по логарифмическому профилю
+function windAt(hr,i,h){
+  const pts=LV.map(l=>[l,hr['wind_speed_'+l+'m']?.[i]]).filter(p=>p[1]!=null);if(!pts.length)return null;
+  if(h<=pts[0][0])return pts[0][1];
+  for(let k=1;k<pts.length;k++){const[h1,v1]=pts[k-1],[h2,v2]=pts[k];if(h<=h2)return v1+(v2-v1)*Math.log(h/h1)/Math.log(h2/h1)}
+  return pts[pts.length-1][1];
+}
+function renderWxSites(){
+  const sel=$('#wxSite');const opts=[`<option value="">${T('📍 My location','📍 Моё местоположение')}</option>`].concat(D.sites.filter(s=>s.lat!=null).map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`));
+  sel.innerHTML=opts.join('');sel.value=D.sites.some(s=>s.id===wxPref.site&&s.lat!=null)?wxPref.site:'';
+  $('#wxFloor').value=wxPref.floor;
+}
+async function loadWx(force){
+  const req=++wxReq;let lat,lon;
+  const s=D.sites.find(x=>x.id===$('#wxSite').value);
+  try{if(s){lat=s.lat;lon=s.lon}else{const p=await getPos();lat=p.lat;lon=p.lon}}catch(e){if(req===wxReq){wx=null;$('#wxNow').innerHTML=`<div class="empty">${T('Location unavailable — choose a site','Местоположение недоступно — выберите объект')}</div>`;$('#wxHours').hidden=true;$('#wxMeta').textContent=''}return}
+  const key=lat.toFixed(3)+','+lon.toFixed(3);
+  if(!force&&wx&&key===wxKey&&Date.now()-wxAt<15*6e4){drawWx();return}
+  if(key!==wxKey){wx=null;$('#wxNow').innerHTML=`<div class="empty">${T('Loading forecast…','Загружаю прогноз…')}</div>`;$('#wxHours').hidden=true}
+  const u='https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&hourly=temperature_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,wind_speed_10m,wind_speed_80m,wind_speed_120m,wind_speed_180m,wind_direction_10m,wind_gusts_10m&wind_speed_unit=kmh&timezone=auto&forecast_days=2';
+  try{const r=await fetch(u);if(!r.ok)throw new Error(r.status);const j=await r.json();if(req!==wxReq)return;wx=j;wxKey=key;wxAt=Date.now();drawWx()}
+  catch(e){if(req!==wxReq)return;if(wx)drawWx();else{$('#wxNow').innerHTML=`<div class="empty">${T('No forecast — check the internet connection','Нет прогноза — проверьте интернет')}</div>`;$('#wxHours').hidden=true}$('#wxMeta').textContent=T('Could not update the forecast','Не удалось обновить прогноз')}
+}
+function drawWx(){
+  const fl=Math.max(1,Math.min(100,Math.round(+$('#wxFloor').value||1))),h=fl*FLOOR_M;
+  $('#wxH').textContent=T(`≈ ${h} m above ground (${FLOOR_M} m per floor)`,`≈ ${h} м над землёй (${FLOOR_M} м на этаж)`);
+  if(!wx)return;
+  const hr=wx.hourly,n=new Date(),now=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:00`;
+  let i0=hr.time.indexOf(now);if(i0<0)i0=0;
+  const at=i=>{const v10=hr.wind_speed_10m[i],vh=windAt(hr,i,h),g=hr.wind_gusts_10m[i];return{v10,vh,g,gh:h<=10||!v10?g:g*vh/v10,d:hr.wind_direction_10m[i]}};
+  const r0=at(i0),kmh=T('km/h','км/ч'),R=Math.round,approx=h>10?'≈':'';
+  $('#wxNow').innerHTML=`
+    <div class="wxrow"><div><small>${T(`Floor ${fl} (≈${h} m)`,`Этаж ${fl} (≈${h} м)`)}</small><span class="num">${R(r0.vh)}</span> ${kmh}</div><div style="text-align:right"><small>${T('Gusts','Порывы')}</small><span class="num">${approx}${R(r0.gh)}</span> ${kmh}</div></div>
+    <div class="wxrow"><div><small>${T('Ground (10 m)','У земли (10 м)')}</small>${R(r0.v10)} ${kmh} · ${T('gusts','порывы')} ${R(r0.g)}</div><div style="text-align:right"><small>${T('From','Откуда')}</small>${arrow(r0.d)} ${compass(r0.d)} ${R(r0.d)}°</div></div>
+    <div class="wxrow"><div><small>${T('Temperature','Температура')}</small>${R(hr.temperature_2m[i0])} °C · ${T('feels','ощущ.')} ${R(hr.apparent_temperature[i0])} °C</div><div style="text-align:right"><small>${T('Precipitation','Осадки')}</small>${hr.precipitation_probability[i0]??'—'}% · ${hr.precipitation[i0]} ${T('mm','мм')}</div></div>
+    <div class="wxrow"><div><small>${T('Conditions','Погода')}</small>${wxCodeTxt(hr.weather_code[i0])}</div></div>`;
+  let rows='';for(let i=i0;i<Math.min(hr.time.length,i0+24);i++){const r=at(i);
+    rows+=`<tr><td>${fT(hr.time[i])}</td><td>${R(r.vh)}</td><td>${approx}${R(r.gh)}</td><td>${arrow(r.d)} ${compass(r.d)}</td><td>${R(hr.temperature_2m[i])}°</td><td>${hr.precipitation_probability[i]??'—'}%</td></tr>`}
+  $('#wxHours').innerHTML=`<b>${T(`Next 24 hours · floor ${fl}`,`Ближайшие 24 часа · этаж ${fl}`)}</b><div class="tbl"><table><thead><tr><th>${T('Time','Время')}</th><th>${T('Wind','Ветер')}<br>${kmh}</th><th>${T('Gusts','Порывы')}<br>${kmh}</th><th>${T('From','Откуда')}</th><th>°C</th><th>${T('Precip.','Осадки')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  $('#wxHours').hidden=false;
+  $('#wxMeta').textContent=T(`Forecast: Open-Meteo · updated ${fT(wxAt)}. Wind above 10 m is interpolated from 10/80/120/180 m levels; gusts at height are estimated (≈). Building effects are not included.`,`Прогноз: Open-Meteo · обновлён ${fT(wxAt)}. Ветер выше 10 м рассчитан между уровнями 10/80/120/180 м; порывы на высоте — оценка (≈). Влияние самого здания не учтено.`);
+}
+$('#wxSite').onchange=()=>{wxPref.site=$('#wxSite').value;wxSave();loadWx()};
+const setFloor=f=>{f=Math.max(1,Math.min(100,Math.round(+f||1)));wxPref.floor=f;wxSave();if(+$('#wxFloor').value!==f&&document.activeElement!==$('#wxFloor'))$('#wxFloor').value=f;drawWx()};
+$('#wxFloor').oninput=()=>{if($('#wxFloor').value!=='')setFloor($('#wxFloor').value)};
+$('#wxFloor').onchange=()=>{$('#wxFloor').value=wxPref.floor};
+$('#wxMinus').onclick=()=>{$('#wxFloor').value=wxPref.floor-1;setFloor(wxPref.floor-1)};
+$('#wxPlus').onclick=()=>{$('#wxFloor').value=wxPref.floor+1;setFloor(wxPref.floor+1)};
+
 /* --- вкладки --- */
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate();$('main').scrollTop=0});
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='t-'+b.dataset.t));if(b.dataset.t==='report')renderReport();if(b.dataset.t==='shift'&&!D.cur)locate();if(b.dataset.t==='wx'){renderWxSites();loadWx()}$('main').scrollTop=0});
 // клавиатура iPhone не уменьшает экран, а сдвигает видимую область — подгоняем каркас и окна под неё
 {const vv=window.visualViewport,root=document.documentElement;
   const fit=()=>{if(!vv)return;root.style.setProperty('--vvh',vv.height+'px');root.style.setProperty('--vvt',vv.offsetTop+'px');root.classList.toggle('kb',vv.height<window.innerHeight*0.8);
@@ -533,7 +617,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.query
   if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit);fit()}
   // если iOS всё же прокрутил документ к полю ввода — вернуть его на место
   window.addEventListener('scroll',()=>{if(window.scrollY)window.scrollTo(0,0)})}
-function renderAll(){renderSites();renderShift();renderLog();renderReport()}
+function renderAll(){renderSites();renderShift();renderLog();renderReport();renderWxSites();drawWx()}
 $('#langBtn').onclick=()=>{LANG=LANG==='ru'?'en':'ru';try{localStorage.setItem(LK,LANG)}catch(e){}
   applyLang();renderAll();lastNearState='';showNear();document.dispatchEvent(new Event('langchange'))};
 applyLang();
@@ -541,7 +625,7 @@ renderAll();
 try{navigator.storage?.persist?.()}catch(e){}
 (async()=>{try{const s=await pGet('__state');if(s){const r=JSON.parse(s);if((r.upd||0)>(D.upd||0)){D=Object.assign({sites:[],shifts:[],cur:null,log:[],rate:'',ot:44},r);renderAll()}}else save()}catch(e){}locate();startGeoWatch()})();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){locate();startGeoWatch()}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){locate();startGeoWatch();if($('#t-wx').classList.contains('on'))loadWx()}});
 window.SM={get D(){return D},T,save,renderSites,geocode,fwdGeocode,loadGoogle,getPos,dist,toast,esc,setPending:p=>{sPos=p}};
 }
 </script>
