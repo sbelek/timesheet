@@ -246,8 +246,12 @@ function openPhoto(src,owner,id,redraw){const d=$('#pdlg');d.className='sheet';
 const getPos=()=>new Promise((ok,no)=>{if(!navigator.geolocation)return no(new Error('нет геолокации'));navigator.geolocation.getCurrentPosition(p=>ok({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy}),no,{enableHighAccuracy:true,timeout:15000,maximumAge:60000})});
 const GKEY='AIzaSyBUe2ItyULzexARMFsnIwGFQr6IRL-kgGo';let gP=null;
 const loadGoogle=()=>gP||(gP=new Promise((ok,no)=>{if(window.google?.maps)return ok(window.google.maps);const cb='_gmc'+Date.now();window[cb]=()=>{delete window[cb];ok(window.google.maps)};const s=document.createElement('script');s.src=`https://maps.googleapis.com/maps/api/js?key=${GKEY}&language=ru&callback=${cb}`;s.onerror=()=>{gP=null;s.remove();no(new Error('Карта не загрузилась — нужен интернет'))};document.head.appendChild(s)}));
-const gGeo=async req=>{const g=await loadGoogle();const{results}=await new g.Geocoder().geocode(req);return results?.[0]||null};
-const geocode=async(lat,lon)=>{try{return (await gGeo({location:{lat,lng:lon}}))?.formatted_address||''}catch(e){return ''}};
+const gGeo=async req=>{const g=await loadGoogle();const res=await new g.Geocoder().geocode(req);return res?.results?.[0]||null};
+// Запасной геокодер (OpenStreetMap), если Google отказал (например, не подключена оплата)
+const osm=async(path,params)=>{const u=new URL('https://nominatim.openstreetmap.org/'+path);Object.entries({format:'jsonv2','accept-language':'ru',...params}).forEach(([k,v])=>u.searchParams.set(k,v));const r=await fetch(u);if(!r.ok)throw new Error('OSM '+r.status);return r.json()};
+const osmAddr=a=>{if(!a)return '';const x=a.address||{};const street=[x.house_number,x.road].filter(Boolean).join(' ');const city=x.city||x.town||x.village||x.suburb||'';return [street,city].filter(Boolean).join(', ')||a.display_name||''};
+const geocode=async(lat,lon)=>{try{const r=await gGeo({location:{lat,lng:lon}});if(r?.formatted_address)return r.formatted_address}catch(e){console.warn('Geocoder:',e?.code||e?.message||e)}
+  try{return osmAddr(await osm('reverse',{lat,lon,zoom:18}))}catch(e){return ''}};
 const dist=(a,b)=>{const R=6371e3,r=Math.PI/180,dl=(b.lat-a.lat)*r,dn=(b.lon-a.lon)*r;const h=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 let lastLoc=null;
 let nearSite=null;
@@ -294,7 +298,8 @@ function showNear(){
   }
   card.hidden=false;
 }
-const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(!r)return null;const l=r.geometry.location;return{lat:l.lat(),lon:l.lng(),addr:r.formatted_address||''}}catch(e){console.warn('Geocoder:',e?.code||e?.message||e);return null}};
+const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(r){const l=r.geometry.location;return{lat:l.lat(),lon:l.lng(),addr:r.formatted_address||''}}}catch(e){console.warn('Geocoder:',e?.code||e?.message||e)}
+  try{const j=await osm('search',{q,limit:1,addressdetails:1});if(j?.[0])return{lat:+j[0].lat,lon:+j[0].lon,addr:osmAddr(j[0])}}catch(e){console.warn('OSM:',e?.message||e)}return null};
 
 /* --- смена --- */
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
