@@ -294,7 +294,7 @@ function showNear(){
   }
   card.hidden=false;
 }
-const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(!r)return null;const l=r.geometry.location;return{lat:l.lat(),lon:l.lng()}}catch(e){return null}};
+const fwdGeocode=async q=>{try{const r=await gGeo({address:q});if(!r)return null;const l=r.geometry.location;return{lat:l.lat(),lon:l.lng(),addr:r.formatted_address||''}}catch(e){console.warn('Geocoder:',e?.code||e?.message||e);return null}};
 
 /* --- смена --- */
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);

@@ -41,13 +41,17 @@
     };
 
     const find = async () => {
-      const q = $('#mQ').value.trim(); if (!q) return;
+      const q = $('#mQ').value.trim();
+      if (!q) { $('#mHint').textContent = 'Введите адрес в поле поиска.'; $('#mQ').focus(); return; }
+      if (!map || !window.google?.maps) { $('#mHint').textContent = 'Карта ещё загружается, подождите…'; return; }
       $('#mHint').textContent = 'Ищу…';
       const p = await SM.fwdGeocode(q);
       if (!p) { $('#mHint').textContent = 'Адрес не найден. Попробуйте иначе.'; return; }
-      map && map.setCenter({ lat: p.lat, lng: p.lon });
-      map && map.setZoom(18);
-      $('#mHint').textContent = 'Нашёл. Нажмите на нужное здание.';
+      map.setCenter({ lat: p.lat, lng: p.lon });
+      map.setZoom(18);
+      setPoint(window.google.maps, p.lat, p.lon, false);
+      if (p.addr) $('#mAddr').value = p.addr;
+      $('#mHint').textContent = 'Нашёл — метка на адресе. Поправьте, если нужно, и нажмите «Готово».';
     };
     $('#mFind').onclick = find;
     $('#mQ').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); find(); } };
