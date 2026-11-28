@@ -63,6 +63,9 @@ textarea{min-height:80px;resize:vertical}
 .item b{font-size:17px}.item small{color:var(--mute);display:block}
 .num{font-size:26px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums;text-align:right}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.stats.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+label.chk{display:flex;align-items:center;gap:10px;min-height:44px;margin:8px 0 0;color:var(--ink);font-size:16px;cursor:pointer}
+label.chk input{width:22px;height:22px;min-height:0;padding:0;margin:0;flex:none;accent-color:var(--y)}
 .stat{background:var(--card);border-radius:12px;padding:12px;border:1px solid var(--line)}
 .stat .num{text-align:left;font-size:30px}.stat small{color:var(--mute)}
 .bar{height:10px;border-radius:5px;background:#16181a;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--y)}
@@ -165,11 +168,12 @@ input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;displa
   <div id="perRange" class="addr"></div>
   <div class="row" style="margin-top:10px">
     <div><label for="rate" data-ru="Ставка $/час">Rate $/hour</label><input id="rate" type="number" inputmode="decimal" step="0.5" placeholder="0"></div>
-    <div><label for="otLim" data-ru="Сверхурочные после, ч/нед">Overtime after, h/week</label><input id="otLim" type="number" inputmode="numeric" value="44"></div>
+    <div id="otBox" hidden><label for="otLim" data-ru="Сверхурочные после, ч/нед">Overtime after, h/week</label><input id="otLim" type="number" inputmode="numeric" value="44"></div>
   </div>
-  <div class="stats" style="margin-top:12px">
+  <label class="chk"><input id="otOn" type="checkbox"><span data-ru="Считать сверхурочные (×1.5)">Count overtime (×1.5)</span></label>
+  <div class="stats" id="stats" style="margin-top:12px">
     <div class="stat"><small data-ru="Часы">Hours</small><div id="rH" class="num">0</div></div>
-    <div class="stat"><small data-ru="Сверхурочные">Overtime</small><div id="rOT" class="num">0</div></div>
+    <div class="stat" id="otStat" hidden><small data-ru="Сверхурочные">Overtime</small><div id="rOT" class="num">0</div></div>
     <div class="stat"><small data-ru="Заработок">Earnings</small><div id="rPay" class="num">$0</div></div>
   </div>
   <div class="card" id="bySite"></div>
@@ -456,11 +460,13 @@ const inRange=()=>{const[a,b]=range();return D.shifts.filter(s=>s.start>=a&&s.st
 const money=v=>'$'+v.toLocaleString('en-CA',{maximumFractionDigits:0});
 function renderReport(){
   $('#rate').value=D.rate;$('#otLim').value=D.ot;
+  // сверхурочные — по желанию (по умолчанию выключены): часы сверх порога за неделю, ×1.5
+  const otOn=!!D.otOn;$('#otOn').checked=otOn;$('#otBox').hidden=!otOn;$('#otStat').hidden=!otOn;$('#stats').classList.toggle('two',!otOn);
   const per=$('#period').value;$('#payBox').hidden=!/biweek/.test(per);if(document.activeElement!==$('#payStart'))$('#payStart').value=dOnly(payAnchor());
   $('#perRange').textContent=per==='all'?'':'📅 '+rangeText();
   const list=inRange(),lim=(+D.ot||44)*36e5,rate=+D.rate||0;
   const weeks={};list.forEach(s=>{const k=+monday(s.start);weeks[k]=(weeks[k]||0)+workMs(s)});
-  const tot=list.reduce((a,s)=>a+workMs(s),0),ot=Object.values(weeks).reduce((a,w)=>a+Math.max(0,w-lim),0);
+  const tot=list.reduce((a,s)=>a+workMs(s),0),ot=otOn?Object.values(weeks).reduce((a,w)=>a+Math.max(0,w-lim),0):0;
   $('#rH').textContent=hrs(tot);$('#rOT').textContent=hrs(ot);$('#rPay').textContent=rate?money((tot-ot)/36e5*rate+ot/36e5*rate*1.5):'—';
   const by={};list.forEach(s=>{const n=s.siteName||siteName(s.siteId);by[n]=(by[n]||0)+workMs(s)});
   const mx=Math.max(1,...Object.values(by));
@@ -501,6 +507,7 @@ $('#period').onchange=renderReport;
 $('#payStart').onchange=()=>{const v=$('#payStart').value;if(!v)return;D.payStart=v;save();renderReport()};
 $('#rate').oninput=()=>{D.rate=$('#rate').value;save();renderReport()};
 $('#otLim').oninput=()=>{D.ot=$('#otLim').value;save();renderReport()};
+$('#otOn').onchange=()=>{D.otOn=$('#otOn').checked;save();renderReport()};
 const csvCell=v=>{v=String(v??'');return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 async function download(name,text,type){const f=new File(['\ufeff'+text],name,{type});if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f]})}catch(e){if(e.name!=='AbortError')toast(T('Could not save','Не удалось сохранить'))}return}const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 async function shareFile(f,title){try{await navigator.share({files:[f],title})}catch(e){if(e.name!=='AbortError')toast(T('Could not share','Не удалось поделиться'))}}
